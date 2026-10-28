@@ -1,0 +1,9 @@
+{
+  "clip": "test_clip.mp4",
+  "transcript": "Type here, word for word, what is said in the clip.",
+  "items": [
+    {"category": "object", "names": ["bed", "single bed"], "start_s": 0, "end_s": 40},
+    {"category": "place", "names": ["Santo Domingo"]},
+    {"category": "topic", "names": ["bedroom"]}
+  ]
+}
