@@ -117,3 +117,8 @@ def test_checks_set_statuses():
     }
     notes = {c.claim_id: c.notes for c in checked.claims}
     assert "quote" in notes["invented"]
+
+
+def test_prompt_asks_for_english_object_phrases():
+    prompt = build_extraction_prompt(TRANSCRIPT)
+    assert "English noun phrase" in prompt
