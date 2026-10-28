@@ -33,7 +33,7 @@ class ExtractCallError(RuntimeError):
         self.status_code = status_code
 
 
-def _output_text(body: dict) -> str:
+def output_text(body: dict) -> str:
     direct = body.get("output_text")
     if isinstance(direct, str) and direct.strip():
         return direct
@@ -109,7 +109,7 @@ def call_model(
         raise ExtractCallError(
             f"response incomplete ({reason}); raise max_output_tokens"
         )
-    text = _output_text(body)
+    text = output_text(body)
     if not text.strip():
         raise ExtractCallError("model returned no text")
     return text
