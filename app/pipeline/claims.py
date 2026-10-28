@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from enum import Enum
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -43,14 +43,14 @@ class VisualEvidence(BaseModel):
     description: str | None = None
 
     @model_validator(mode="after")
-    def _end_not_before_start(self) -> "VisualEvidence":
+    def _end_not_before_start(self) -> VisualEvidence:
         if self.end_s < self.start_s:
             raise ValueError("end_s must not be earlier than start_s")
         return self
 
 
 Evidence = Annotated[
-    Union[SpeechEvidence, VisualEvidence], Field(discriminator="kind")
+    SpeechEvidence | VisualEvidence, Field(discriminator="kind")
 ]
 
 
@@ -68,7 +68,7 @@ class ClaimSet(BaseModel):
     claims: list[Claim] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def _unique_ids(self) -> "ClaimSet":
+    def _unique_ids(self) -> ClaimSet:
         ids = [claim.claim_id for claim in self.claims]
         if len(ids) != len(set(ids)):
             raise ValueError("claim_id values must be unique")
