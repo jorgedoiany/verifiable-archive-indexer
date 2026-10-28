@@ -41,7 +41,10 @@ def build_extraction_prompt(transcript: Transcript) -> str:
         '<seconds>, "description": "<what is visible>"}\n\n'
         "Rules: never invent a quote; copy it exactly from the turn you cite. Do "
         "not claim anything you cannot support with evidence. Categories: person, "
-        "place, topic, scene, object. Use short noun phrases for objects.\n\n"
+        "place, topic, scene, object. For category object, value must be ONE short "
+        "English noun phrase naming a single concrete visible thing (for example "
+        "'red bicycle'), because a segmentation model will check it; never put "
+        "several objects in one claim.\n\n"
         "Reply with JSON only, in this shape:\n"
         '{"claims": [{"claim_id": "c1", "category": "place", "value": "...", '
         '"evidence": [...], "model_confidence": 0.0, "notes": null}]}'
