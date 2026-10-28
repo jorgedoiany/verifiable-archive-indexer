@@ -5,6 +5,7 @@ Responses API layout and has not been confirmed against a live call yet.
 """
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 from typing import Callable
@@ -155,8 +156,6 @@ def run_extract_stage(
 
     stem = silent_video.stem.removesuffix(".silent")
     out = work_dir / f"{stem}.claims.json"
-    import json
-
     out.write_text(
         json.dumps(
             {"claims": claim_set.model_dump(mode="json")["claims"], "parse_errors": errors},
