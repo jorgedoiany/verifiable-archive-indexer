@@ -225,3 +225,7 @@ data/work/
 
 # macOS
 .DS_Store
+
+# Personal ground truth (decide before publishing)
+data/ground_truth/*.json
+!data/ground_truth/template.json
