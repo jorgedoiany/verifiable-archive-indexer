@@ -158,7 +158,7 @@ def test_stage_writes_claims_and_keeps_file(tmp_path, settings, respx_mock, monk
     monkeypatch.setattr(extract, "delete_file", lambda fid, s, **kw: deleted.append(fid))
     respx_mock.post(URL).mock(return_value=httpx.Response(200, json=reply(CLAIMS_TEXT)))
 
-    claim_set, errors, file_id, out = run_extract_stage(
+    _claim_set, _errors, file_id, out = run_extract_stage(
         tmp_path / "clip.silent.mp4", TRANSCRIPT, tmp_path / "work", settings
     )
     assert file_id == "file-1"
