@@ -18,7 +18,7 @@ class Turn(BaseModel):
     speaker: str | None = None
 
     @model_validator(mode="after")
-    def _end_not_before_start(self) -> "Turn":
+    def _end_not_before_start(self) -> Turn:
         if self.end_ms < self.start_ms:
             raise ValueError("end_ms must not be earlier than start_ms")
         return self

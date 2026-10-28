@@ -1,8 +1,8 @@
 """Stage 1: video -> speech audio -> turn-level transcript saved as JSON."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from app.config import Settings
 from app.pipeline.media import extract_audio
