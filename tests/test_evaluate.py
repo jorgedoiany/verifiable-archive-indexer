@@ -133,3 +133,47 @@ def test_load_ground_truth_from_file(tmp_path):
     path = tmp_path / "truth.json"
     path.write_text(TRUTH.model_dump_json(), encoding="utf-8")
     assert load_ground_truth(path) == TRUTH
+
+
+def test_item_with_several_ranges_matches_any_of_them():
+    truth = GroundTruth.model_validate(
+        {
+            "clip": "c",
+            "transcript": "t",
+            "items": [
+                {
+                    "category": "object",
+                    "names": ["air conditioner"],
+                    "ranges": [[0, 6], [35, 40]],
+                }
+            ],
+        }
+    )
+    early = ClaimSet(
+        claims=[make_claim("c1", "air conditioner", status="verified", start=1, end=4)]
+    )
+    late = ClaimSet(
+        claims=[make_claim("c2", "air conditioner", status="verified", start=36, end=39)]
+    )
+    middle = ClaimSet(
+        claims=[make_claim("c3", "air conditioner", status="verified", start=15, end=20)]
+    )
+    assert evaluate(early, "", truth).precision_verified == 1.0
+    assert evaluate(late, "", truth).precision_verified == 1.0
+    assert evaluate(middle, "", truth).precision_verified == 0
+    # one object counts once in the recall denominator, however many ranges it has
+    assert evaluate(early, "", truth).truth_total == 1
+    assert evaluate(early, "", truth).recall_verified == 1.0
+
+
+def test_invalid_range_is_rejected():
+    with pytest.raises(ValidationError):
+        GroundTruth.model_validate(
+            {
+                "clip": "c",
+                "transcript": "t",
+                "items": [
+                    {"category": "object", "names": ["x"], "ranges": [[5, 1]]}
+                ],
+            }
+        )

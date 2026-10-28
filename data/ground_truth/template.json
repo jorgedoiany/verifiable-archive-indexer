@@ -2,8 +2,9 @@
   "clip": "test_clip.mp4",
   "transcript": "Type here, word for word, what is said in the clip.",
   "items": [
-    {"category": "object", "names": ["bed", "single bed"], "start_s": 0, "end_s": 40},
+    {"category": "object", "names": ["bed", "cama"], "start_s": 0, "end_s": 40},
+    {"category": "object", "names": ["air conditioner", "aire acondicionado"], "ranges": [[0, 6], [36, 40]]},
     {"category": "place", "names": ["Santo Domingo"]},
-    {"category": "topic", "names": ["bedroom"]}
+    {"category": "scene", "names": ["bedroom", "room", "cuarto"]}
   ]
 }

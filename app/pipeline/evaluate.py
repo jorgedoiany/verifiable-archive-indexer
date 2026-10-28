@@ -29,18 +29,23 @@ class TruthItem(BaseModel):
     names: list[str] = Field(min_length=1)
     start_s: float | None = Field(default=None, ge=0)
     end_s: float | None = Field(default=None, ge=0)
+    ranges: list[tuple[float, float]] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def _range_is_complete_and_ordered(self) -> TruthItem:
+    def _ranges_are_complete_and_ordered(self) -> TruthItem:
         if (self.start_s is None) != (self.end_s is None):
             raise ValueError("start_s and end_s must be given together")
-        if (
-            self.start_s is not None
-            and self.end_s is not None
-            and self.end_s < self.start_s
-        ):
-            raise ValueError("end_s must not be earlier than start_s")
+        for start, end in self.time_ranges():
+            if start < 0 or end < start:
+                raise ValueError("each range needs 0 <= start <= end")
         return self
+
+    def time_ranges(self) -> list[tuple[float, float]]:
+        """Every time span in which the item is visible (empty means any time)."""
+        spans = list(self.ranges)
+        if self.start_s is not None and self.end_s is not None:
+            spans.append((self.start_s, self.end_s))
+        return spans
 
 
 class GroundTruth(BaseModel):
@@ -105,14 +110,17 @@ def name_matches(value: str, names: Sequence[str]) -> bool:
 def claim_matches_item(claim: Claim, item: TruthItem) -> bool:
     if claim.category != item.category or not name_matches(claim.value, item.names):
         return False
-    if item.start_s is None:
+    spans = item.time_ranges()
+    if not spans:
         return True
-    ranges = [e for e in claim.evidence if isinstance(e, VisualEvidence)]
-    if not ranges:
-        return True  # speech-only claim: the truth time range does not apply
-    start = item.start_s
-    end = item.end_s if item.end_s is not None else item.start_s
-    return any(r.start_s <= end and r.end_s >= start for r in ranges)
+    visual = [e for e in claim.evidence if isinstance(e, VisualEvidence)]
+    if not visual:
+        return True  # speech-only claim: the truth time ranges do not apply
+    return any(
+        r.start_s <= end and r.end_s >= start
+        for r in visual
+        for start, end in spans
+    )
 
 
 def _ratio(numerator: int, denominator: int) -> float | None:
