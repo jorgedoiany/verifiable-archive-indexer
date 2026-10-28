@@ -4,13 +4,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.pipeline.claims import ClaimSet
+from pydantic import BaseModel
+
+from app.pipeline.claims import Claim, ClaimSet
 from app.pipeline.evaluate import Metrics, evaluate, load_ground_truth, metrics_to_dict
 from app.pipeline.models import parse_transcript
 
 
 class EvaluationInputError(FileNotFoundError):
     pass
+
+
+class _VerifiedReport(BaseModel):
+    claims: list[Claim]
 
 
 def evaluate_clip(stem: str, work_dir: Path, truth_path: Path) -> Metrics:
@@ -23,12 +29,10 @@ def evaluate_clip(stem: str, work_dir: Path, truth_path: Path) -> Metrics:
         if not path.exists():
             raise EvaluationInputError(f"missing file: {path}")
 
-    report = json.loads(verified_path.read_text(encoding="utf-8"))
-    claims = report.get("claims") if isinstance(report, dict) else None
-    if not isinstance(claims, list):
-        raise ValueError(f"{verified_path} has no 'claims' list")
-
-    claim_set = ClaimSet.model_validate({"claims": claims})
+    report = _VerifiedReport.model_validate_json(
+        verified_path.read_text(encoding="utf-8")
+    )
+    claim_set = ClaimSet(claims=report.claims)
     transcript = parse_transcript(
         json.loads(transcript_path.read_text(encoding="utf-8"))
     )
