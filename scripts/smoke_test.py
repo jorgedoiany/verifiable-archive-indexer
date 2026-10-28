@@ -26,7 +26,7 @@ def step(name, fn) -> bool:
     try:
         print(f"OK   {name}: {fn()}")
         return True
-    except Exception as exc:  # report every failure on one line
+    except Exception as exc:  # noqa: BLE001 - report every failure on one line
         print(f"FAIL {name}: {type(exc).__name__}: {str(exc)[:200]}")
         return False
 
