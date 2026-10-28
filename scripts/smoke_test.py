@@ -16,7 +16,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import load_settings
-from app.pipeline.extract import _output_text
+from app.pipeline.extract import output_text
 from app.pipeline.files_api import delete_file, upload_video
 from app.pipeline.media import strip_audio
 from app.pipeline.transcript_stage import run_transcript_stage
@@ -95,7 +95,7 @@ def main() -> int:
         response.raise_for_status()
         body = response.json()
         types = [i.get("type") for i in body.get("output") or [] if isinstance(i, dict)]
-        text = _output_text(body)
+        text = output_text(body)
         return (
             f"status={body.get('status')}, keys={sorted(body)[:12]}, "
             f"output types={types}, usage={body.get('usage')}, text={text[:160]!r}"
