@@ -20,7 +20,7 @@ from app.pipeline.claims import (
 from app.pipeline.sam import SamResult, clean_concept, estimate_cost
 from app.pipeline.sam_parse import frames_present
 
-DEFAULT_MAX_CONCEPTS = 12
+DEFAULT_MAX_CONCEPTS = 25
 DEFAULT_MIN_CONFIDENCE = 0.5
 DEFAULT_MIN_FRAMES = 2
 

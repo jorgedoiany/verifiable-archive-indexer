@@ -122,3 +122,10 @@ def test_checks_set_statuses():
 def test_prompt_asks_for_english_object_phrases():
     prompt = build_extraction_prompt(TRANSCRIPT)
     assert "English noun phrase" in prompt
+
+
+def test_prompt_asks_for_an_exhaustive_inventory():
+    prompt = build_extraction_prompt(TRANSCRIPT)
+    assert "EVERY clearly visible" in prompt
+    assert "up to 25 objects" in prompt
+    assert "one claim per appearance" in prompt

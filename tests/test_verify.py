@@ -134,3 +134,10 @@ def test_already_decided_claims_are_unchanged():
     claim = only(verify_claims(claims, {}, fps=FPS))
     assert claim.status == ClaimStatus.VERIFIED
     assert claim.notes is None
+
+
+def test_default_cap_allows_a_full_inventory():
+    claims = ClaimSet(claims=[make_claim(f"c{i}", f"object {i}") for i in range(25)])
+    plan = plan_verification(claims, duration_s=41.0, fps=FPS)
+    assert len(plan.concepts) == 25
+    assert plan.capped_claim_ids == ()

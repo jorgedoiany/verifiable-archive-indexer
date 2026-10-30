@@ -45,6 +45,12 @@ def build_extraction_prompt(transcript: Transcript) -> str:
         "English noun phrase naming a single concrete visible thing (for example "
         "'red bicycle'), because a segmentation model will check it; never put "
         "several objects in one claim.\n\n"
+        "Be exhaustive about visible objects: list EVERY clearly visible distinct "
+        "object, including small, background and decorative ones and clothing, up "
+        "to 25 objects, one claim per object, each with the time range in which it "
+        "is visible. If an object leaves the frame and comes back, make one claim "
+        "per appearance. Never list the same object twice for the same time "
+        "range, and skip anything you cannot actually see.\n\n"
         "Reply with JSON only, in this shape:\n"
         '{"claims": [{"claim_id": "c1", "category": "place", "value": "...", '
         '"evidence": [...], "model_confidence": 0.0, "notes": null}]}'

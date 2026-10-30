@@ -229,3 +229,6 @@ data/work/
 # Personal ground truth (decide before publishing)
 data/ground_truth/*.json
 !data/ground_truth/template.json
+
+# Experiment runs
+data/work_*/
