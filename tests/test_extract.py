@@ -182,3 +182,56 @@ def test_stage_deletes_uploaded_file_when_call_fails(
             tmp_path / "clip.silent.mp4", TRANSCRIPT, tmp_path / "work", settings
         )
     assert deleted == ["file-1"]
+
+
+INCOMPLETE = {
+    "status": "incomplete",
+    "incomplete_details": {"reason": "max_output_tokens"},
+    "output": [],
+}
+
+
+def test_default_budget_leaves_room_for_an_inventory():
+    assert extract.DEFAULT_MAX_OUTPUT_TOKENS == 16_000
+    assert extract.RETRY_MAX_OUTPUT_TOKENS == 32_000
+
+
+def test_truncated_response_is_retried_once_with_a_bigger_budget(settings, respx_mock):
+    route = respx_mock.post(URL).mock(
+        side_effect=[
+            httpx.Response(200, json=INCOMPLETE),
+            httpx.Response(200, json=reply(CLAIMS_TEXT)),
+        ]
+    )
+    claim_set, _ = extract_claims("file-1", TRANSCRIPT, settings)
+    budgets = [json.loads(c.request.content)["max_output_tokens"] for c in route.calls]
+    assert budgets == [16_000, 32_000]
+    assert len(claim_set.claims) == 2
+
+
+def test_second_truncation_is_an_error(settings, respx_mock):
+    route = respx_mock.post(URL).mock(
+        side_effect=[httpx.Response(200, json=INCOMPLETE)] * 2
+    )
+    with pytest.raises(extract.ExtractIncompleteError):
+        extract_claims("file-1", TRANSCRIPT, settings)
+    assert route.call_count == 2
+
+
+def test_no_retry_when_already_at_the_maximum(settings, respx_mock):
+    route = respx_mock.post(URL).mock(return_value=httpx.Response(200, json=INCOMPLETE))
+    with pytest.raises(extract.ExtractIncompleteError):
+        extract_claims("file-1", TRANSCRIPT, settings, max_output_tokens=32_000)
+    assert route.call_count == 1
+
+
+def test_other_incomplete_reasons_are_not_retried(settings, respx_mock):
+    body = {
+        "status": "incomplete",
+        "incomplete_details": {"reason": "content_filter"},
+        "output": [],
+    }
+    route = respx_mock.post(URL).mock(return_value=httpx.Response(200, json=body))
+    with pytest.raises(ExtractCallError):
+        extract_claims("file-1", TRANSCRIPT, settings)
+    assert route.call_count == 1

@@ -23,14 +23,23 @@ from app.pipeline.files_api import FilesError, delete_file, upload_video
 from app.pipeline.models import Transcript
 
 RETRY_STATUSES = {429, 500}
-# Reasoning shares the output budget; the docs advise at least 4000.
-DEFAULT_MAX_OUTPUT_TOKENS = 8_000
+# Reasoning shares the output budget; the docs advise at least 4000. An
+# exhaustive inventory needs more, and one retry with a larger budget
+# covers the long tail.
+DEFAULT_MAX_OUTPUT_TOKENS = 16_000
+RETRY_MAX_OUTPUT_TOKENS = 32_000
 
 
 class ExtractCallError(RuntimeError):
     def __init__(self, message: str, status_code: int | None = None):
         super().__init__(message)
         self.status_code = status_code
+
+
+class ExtractIncompleteError(ExtractCallError):
+    def __init__(self, reason: str | None):
+        super().__init__(f"response incomplete ({reason}); raise max_output_tokens")
+        self.reason = reason
 
 
 def output_text(body: dict) -> str:
@@ -106,9 +115,7 @@ def call_model(
     if body.get("status") == "incomplete":
         details = body.get("incomplete_details")
         reason = details.get("reason") if isinstance(details, dict) else None
-        raise ExtractCallError(
-            f"response incomplete ({reason}); raise max_output_tokens"
-        )
+        raise ExtractIncompleteError(reason)
     text = output_text(body)
     if not text.strip():
         raise ExtractCallError("model returned no text")
@@ -119,9 +126,22 @@ def extract_claims(
     file_id: str, transcript: Transcript, settings: Settings, **call_kwargs
 ) -> tuple[ClaimSet, list[str]]:
     """Call the model, parse its claims, and apply the checks that need no model."""
-    text = call_model(
-        file_id, build_extraction_prompt(transcript), settings, **call_kwargs
-    )
+    prompt = build_extraction_prompt(transcript)
+    budget = call_kwargs.pop("max_output_tokens", DEFAULT_MAX_OUTPUT_TOKENS)
+    try:
+        text = call_model(
+            file_id, prompt, settings, max_output_tokens=budget, **call_kwargs
+        )
+    except ExtractIncompleteError as exc:
+        if exc.reason != "max_output_tokens" or budget >= RETRY_MAX_OUTPUT_TOKENS:
+            raise
+        text = call_model(
+            file_id,
+            prompt,
+            settings,
+            max_output_tokens=min(budget * 2, RETRY_MAX_OUTPUT_TOKENS),
+            **call_kwargs,
+        )
     claim_set, errors = parse_model_output(text)
     checked = apply_checks(claim_set, transcript, transcript.audio_duration_ms / 1000)
     return checked, errors
