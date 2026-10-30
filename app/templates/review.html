@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review: {{ stem }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/review.js" defer></script>
+</head>
+<body>
+{% set labels = {
+  "pending": "Needs review",
+  "verified": "Verified by automatic checks",
+  "accepted": "Accepted by archivist",
+  "edited": "Edited by archivist",
+  "rejected": "Rejected by archivist"
+} %}
+<main class="page">
+  <p><a href="/">All clips</a></p>
+  <h1>{{ stem }}</h1>
+  <p class="lead">"Verified" means independent automatic checks agree with the model; it is not a guarantee. Review anything you doubt.</p>
+  <div class="layout">
+    <aside class="side">
+      {% if has_video %}
+      <video id="player" controls preload="metadata" src="/media/{{ stem }}"></video>
+      {% else %}
+      <p class="meta">The video file was not found in the clips folder, so the play buttons are unavailable.</p>
+      {% endif %}
+      <ul class="summary">
+        <li>{{ counts.pending }} need review</li>
+        <li>{{ counts.verified }} verified automatically</li>
+        <li>{{ counts.accepted + counts.edited }} accepted or edited</li>
+        <li>{{ counts.rejected }} rejected</li>
+      </ul>
+      <h2>Export</h2>
+      <p class="exports">
+        <a href="/clips/{{ stem }}/export.json">JSON</a>
+        <a href="/clips/{{ stem }}/export.csv">CSV</a>
+      </p>
+      <p class="meta">Claims that still need review are left out. Include them, clearly labelled as pending:
+        <a href="/clips/{{ stem }}/export.json?include_pending=true">JSON</a>
+        <a href="/clips/{{ stem }}/export.csv?include_pending=true">CSV</a>
+      </p>
+      <h2>Transcript</h2>
+      <ul class="turns">
+      {% for turn in turns %}
+        <li>
+          <button type="button" class="seek" data-seek="{{ turn.start_ms / 1000 }}">{{ '%.1f'|format(turn.start_ms / 1000) }} s</button>
+          {{ turn.transcript }}
+        </li>
+      {% else %}
+        <li>No speech was transcribed.</li>
+      {% endfor %}
+      </ul>
+    </aside>
+    <section>
+      <h2>Claims</h2>
+      {% for c in views %}
+      <article class="claim state-{{ c.state }}" id="claim-{{ c.position }}">
+        <header>
+          <span class="category">{{ c.category }}</span>
+          <h3>{{ c.value }}</h3>
+          <span class="badge">{{ labels[c.state] }}</span>
+        </header>
+        {% if c.original_value %}<p class="meta">Original model value: {{ c.original_value }}</p>{% endif %}
+        <p class="meta">Automatic check: {{ c.auto_status }}{% if c.confidence is not none %} · model confidence {{ '%.2f'|format(c.confidence) }}{% endif %}</p>
+        {% if c.notes %}<p class="meta">{{ c.notes }}</p>{% endif %}
+        <ul class="evidence">
+        {% for e in c.evidence %}
+          <li>{{ e.text }}{% if e.seek is not none and has_video %}<button type="button" class="seek" data-seek="{{ e.seek }}">Play from here</button>{% endif %}</li>
+        {% endfor %}
+        </ul>
+        {% if c.state in ("accepted", "edited", "rejected") %}
+        <p class="meta">Decided {{ c.decided_at }}{% if c.review_note %} · note: {{ c.review_note }}{% endif %}</p>
+        <form method="post" action="/clips/{{ stem }}/undo" class="decision">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="claim_id" value="{{ c.claim_id }}">
+          <input type="hidden" name="position" value="{{ c.position }}">
+          <button type="submit">Undo decision</button>
+        </form>
+        {% else %}
+        <form method="post" action="/clips/{{ stem }}/decide" class="decision">
+          <button type="submit" disabled hidden tabindex="-1" aria-hidden="true"></button>
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="claim_id" value="{{ c.claim_id }}">
+          <input type="hidden" name="position" value="{{ c.position }}">
+          <label>Corrected value (only used by "Save edit")
+            <input type="text" name="value" maxlength="200">
+          </label>
+          <label>Note (optional)
+            <input type="text" name="note" maxlength="500">
+          </label>
+          <button type="submit" name="decision" value="accepted">Accept</button>
+          <button type="submit" name="decision" value="edited">Save edit</button>
+          <button type="submit" name="decision" value="rejected">Reject</button>
+        </form>
+        {% endif %}
+      </article>
+      {% else %}
+      <p>This run produced no claims.</p>
+      {% endfor %}
+    </section>
+  </div>
+</main>
+</body>
+</html>
