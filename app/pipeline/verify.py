@@ -105,7 +105,7 @@ def _with_note(claim: Claim, text: str, status: ClaimStatus | None = None) -> Cl
     return claim.model_copy(update=update)
 
 
-def _frames_in_ranges(
+def frames_in_ranges(
     frames: Sequence[int], ranges: Sequence[VisualEvidence], fps: float
 ) -> list[int]:
     pad = 1 / fps  # tolerate one frame of slack on each side
@@ -163,7 +163,7 @@ def verify_claims(
             present = frames_present(
                 results[key].detections, min_confidence=min_confidence
             )
-            in_range = _frames_in_ranges(present, _visual(claim), fps)
+            in_range = frames_in_ranges(present, _visual(claim), fps)
             if len(in_range) >= min_frames:
                 text = f"SAM found '{concept}' in {len(in_range)} frames inside the cited range"
                 updated.append(_with_note(claim, text, ClaimStatus.VERIFIED))
