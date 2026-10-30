@@ -65,13 +65,14 @@ def call_model(
     prompt: str,
     settings: Settings,
     *,
+    model: str | None = None,
     max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
     max_retries: int = 2,
     sleep: Callable[[float], None] = time.sleep,
 ) -> str:
     """Send the uploaded video and the prompt to the vision model; return its text."""
     payload = {
-        "model": settings.spark_model,
+        "model": model or settings.spark_model,
         "max_output_tokens": max_output_tokens,
         "input": [
             {

@@ -235,3 +235,11 @@ def test_other_incomplete_reasons_are_not_retried(settings, respx_mock):
     with pytest.raises(ExtractCallError):
         extract_claims("file-1", TRANSCRIPT, settings)
     assert route.call_count == 1
+
+
+def test_model_can_be_overridden(settings, respx_mock):
+    route = respx_mock.post(URL).mock(
+        return_value=httpx.Response(200, json=reply("ok"))
+    )
+    call_model("file-1", "p", settings, model="muse-wonder-1.0")
+    assert json.loads(route.calls.last.request.content)["model"] == "muse-wonder-1.0"
