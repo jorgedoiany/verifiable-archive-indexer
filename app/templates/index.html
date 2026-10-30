@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archive review</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<main class="page">
+  <h1>Archive review</h1>
+  <p class="lead">Every metadata claim carries its evidence. What the automatic checks could not verify waits here for you.</p>
+  {% if clips %}
+  <table class="clips">
+    <thead>
+      <tr><th>Clip</th><th>Claims</th><th>Need review</th><th>Verified automatically</th><th>Accepted or edited</th><th>Rejected</th></tr>
+    </thead>
+    <tbody>
+    {% for clip in clips %}
+      <tr>
+        <td><a href="/clips/{{ clip.stem }}">{{ clip.stem }}</a></td>
+        {% if clip.error %}
+        <td colspan="5">This run's files could not be read.</td>
+        {% else %}
+        <td>{{ clip.total }}</td>
+        <td>{{ clip.counts.pending }}</td>
+        <td>{{ clip.counts.verified }}</td>
+        <td>{{ clip.counts.accepted + clip.counts.edited }}</td>
+        <td>{{ clip.counts.rejected }}</td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No processed clips found in <code>{{ work_dir }}</code>. Run <code>python scripts/run_pipeline.py data/clips/your_clip.mp4</code> first.</p>
+  {% endif %}
+</main>
+</body>
+</html>
