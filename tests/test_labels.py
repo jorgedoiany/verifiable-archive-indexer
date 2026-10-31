@@ -141,3 +141,20 @@ def test_labels_that_break_the_rules_write_nothing(tmp_path):
     report = convert_labels(labels, clips, tmp_path / "truth", duration_of=lambda c: 20.0)
     assert len(report.failed["blind_01"]) == 7
     assert not (tmp_path / "truth").exists()
+
+
+@pytest.mark.parametrize(
+    "marker", ["none", "None", "sin voz", "Sin diálogo", "no speech"]
+)
+def test_a_clip_with_no_speech_is_declared_explicitly(marker):
+    truth = parse_labels(
+        f"transcript: {marker}\nobject: lamp, lampara | 1-5", "c", duration_s=10.0
+    )
+    assert truth.transcript == ""
+
+
+def test_a_blank_transcript_is_still_an_error():
+    with pytest.raises(LabelError, match="transcript is missing or empty"):
+        parse_labels("transcript:\nplace: x", "c")
+    with pytest.raises(LabelError, match="more than one transcript"):
+        parse_labels("transcript: none\ntranscript: hola\nplace: x", "c")

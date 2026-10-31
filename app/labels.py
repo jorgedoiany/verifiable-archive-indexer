@@ -21,6 +21,9 @@ from app.pipeline.media import MediaError, probe_duration
 from app.run_data import is_valid_stem
 
 RANGE_MARGIN_S = 1.0
+NO_SPEECH = frozenset(
+    {"none", "no speech", "sin voz", "sin dialogo", "sin diálogo"}
+)
 _NUMBER = r"\d+(?:\.\d+)?"
 _RANGE = re.compile(rf"({_NUMBER})\s*-\s*({_NUMBER})")
 
@@ -30,6 +33,7 @@ TEMPLATE = """# Labels for {stem}.mp4  (lines starting with # are ignored)
 #
 # transcript: write what is said, word for word, as you hear it.
 #   Keep colloquial words. Write numbers as words. Punctuation does not matter.
+#   If nobody speaks in the clip, write exactly: transcript: none
 # place / scene / topic / person: names separated by commas.
 # object: names in English AND Spanish, then a bar and the seconds when it is
 #   visible on screen, one range per appearance (give 1 second of margin).
@@ -89,6 +93,7 @@ def parse_labels(text: str, stem: str, duration_s: float | None = None) -> Groun
     """Parse a label file; raise LabelError listing every problem found."""
     problems: list[str] = []
     transcript: str | None = None
+    no_speech = False
     items: list[TruthItem] = []
     categories = {category.value for category in ClaimCategory}
 
@@ -104,7 +109,12 @@ def parse_labels(text: str, stem: str, duration_s: float | None = None) -> Groun
         if key == "transcript":
             if transcript is not None:
                 problems.append(f"line {number}: more than one transcript line")
-            transcript = rest.strip()
+            value = rest.strip()
+            if value.casefold() in NO_SPEECH:
+                no_speech = True
+                transcript = ""
+            else:
+                transcript = value
             continue
         if key not in categories:
             problems.append(
@@ -125,7 +135,7 @@ def parse_labels(text: str, stem: str, duration_s: float | None = None) -> Groun
         if len(problems) == before:
             items.append(TruthItem(category=ClaimCategory(key), names=names, ranges=ranges))
 
-    if transcript is None or not transcript.strip():
+    if transcript is None or (not transcript.strip() and not no_speech):
         problems.append("transcript is missing or empty")
     if not items and not problems:
         problems.append("no labeled items")

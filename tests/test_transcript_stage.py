@@ -42,6 +42,7 @@ def test_stage_writes_round_trippable_json(tmp_path, monkeypatch):
         seen["keywords"] = tuple(keywords)
         return parse_transcript(SAMPLE)
 
+    monkeypatch.setattr(stage, "has_audio", lambda video: True)
     monkeypatch.setattr(stage, "extract_audio", fake_extract)
     monkeypatch.setattr(stage, "transcribe_file", fake_transcribe)
 
@@ -53,4 +54,22 @@ def test_stage_writes_round_trippable_json(tmp_path, monkeypatch):
     assert out == work / "clip.transcript.json"
     assert seen["wav"] == work / "clip.wav"
     assert seen["keywords"] == ("Santo Domingo",)
+    assert parse_transcript(json.loads(out.read_text(encoding="utf-8"))) == transcript
+
+
+def test_clip_without_an_audio_track_skips_the_api(tmp_path, monkeypatch):
+    def explode(*args, **kwargs):
+        raise AssertionError("the API must not be called")
+
+    monkeypatch.setattr(stage, "has_audio", lambda video: False)
+    monkeypatch.setattr(stage, "probe_duration", lambda video: 12.5)
+    monkeypatch.setattr(stage, "extract_audio", explode)
+    monkeypatch.setattr(stage, "transcribe_file", explode)
+
+    transcript, out = stage.run_transcript_stage(
+        tmp_path / "clip.mp4", tmp_path / "work", make_settings()
+    )
+    assert transcript.turns == []
+    assert transcript.transcript == ""
+    assert transcript.audio_duration_ms == 12_500
     assert parse_transcript(json.loads(out.read_text(encoding="utf-8"))) == transcript

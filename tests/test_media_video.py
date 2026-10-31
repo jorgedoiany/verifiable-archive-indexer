@@ -66,3 +66,19 @@ def test_missing_ffprobe(monkeypatch):
     monkeypatch.setattr(media.shutil, "which", lambda name: None)
     with pytest.raises(MediaError):
         probe_duration(Path("in.mp4"))
+
+
+def test_has_audio_reads_the_ffprobe_output(tools_present, monkeypatch):
+    stub_run(monkeypatch, stdout="1\n")
+    assert media.has_audio(Path("in.mp4")) is True
+    stub_run(monkeypatch, stdout="")
+    assert media.has_audio(Path("in.mp4")) is False
+
+
+def test_has_audio_failure_is_wrapped(tools_present, monkeypatch):
+    def boom(args, **kwargs):
+        raise subprocess.CalledProcessError(1, args, stderr="boom")
+
+    monkeypatch.setattr(media.subprocess, "run", boom)
+    with pytest.raises(MediaError):
+        media.has_audio(Path("in.mp4"))
