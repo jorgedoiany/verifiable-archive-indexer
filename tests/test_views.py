@@ -75,3 +75,11 @@ def test_count_states_includes_every_state():
     store = record_decision(ReviewStore(), CLAIMS, "c", Decision.ACCEPTED, now=NOW)
     counts = count_states(build_views(CLAIMS, TRANSCRIPT, store))
     assert counts == {"pending": 2, "verified": 1, "accepted": 1, "edited": 0, "rejected": 0}
+
+
+def test_automatic_misses_wait_for_a_human_and_are_never_dropped():
+    states = {
+        v.claim_id: v.state for v in build_views(CLAIMS, TRANSCRIPT, ReviewStore())
+    }
+    assert states["c"] == "pending"  # SAM found no match
+    assert states["a"] == "verified"  # internal name; shown as "checks agree"

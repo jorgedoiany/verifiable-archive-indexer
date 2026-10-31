@@ -31,11 +31,19 @@ CSV_COLUMNS = (
 )
 
 
+CATALOG_NOTE = (
+    "final_status 'checks_agree' means independent automatic checks agreed with the "
+    "model's claim. It is not a guarantee that the claim is correct. "
+    "'accepted' and 'edited' come from a human reviewer; 'pending' has "
+    "not been reviewed."
+)
+
+
 class CatalogEntry(BaseModel):
     claim_id: str
     category: str
     value: str
-    final_status: Literal["verified", "accepted", "edited", "pending"]
+    final_status: Literal["checks_agree", "accepted", "edited", "pending"]
     origin: Literal["automatic checks", "archivist", "unreviewed"]
     model_confidence: float | None = None
     original_value: str | None = None
@@ -49,6 +57,7 @@ class Catalog(BaseModel):
     entries: list[CatalogEntry]
     rejected_claim_ids: list[str]
     pending_claim_ids: list[str]
+    note: str = CATALOG_NOTE
 
 
 class _Report(BaseModel):
@@ -99,7 +108,7 @@ def build_catalog(
             original = claim.value if edited else None
             review_note = decision.note
         elif claim.status == ClaimStatus.VERIFIED:
-            status, origin, value = "verified", "automatic checks", claim.value
+            status, origin, value = "checks_agree", "automatic checks", claim.value
         else:
             pending.append(claim.claim_id)
             if not include_pending:

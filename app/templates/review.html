@@ -10,7 +10,7 @@
 <body>
 {% set labels = {
   "pending": "Needs review",
-  "verified": "Verified by automatic checks",
+  "verified": "Automatic checks agree (not a guarantee)",
   "accepted": "Accepted by archivist",
   "edited": "Edited by archivist",
   "rejected": "Rejected by archivist"
@@ -18,7 +18,7 @@
 <main class="page">
   <p><a href="/">All clips</a></p>
   <h1>{{ stem }}</h1>
-  <p class="lead">"Verified" means independent automatic checks agree with the model; it is not a guarantee. Review anything you doubt.</p>
+  <p class="lead">An "automatic checks agree" mark means an independent check (a quote found in the transcript, or a segmentation match) agrees with the model. It is not a guarantee: these checks have accepted objects that are not there. An automatic miss never discards a claim; it waits here for you.</p>
   <div class="layout">
     <aside class="side">
       {% if has_video %}
@@ -28,7 +28,7 @@
       {% endif %}
       <ul class="summary">
         <li>{{ counts.pending }} need review</li>
-        <li>{{ counts.verified }} verified automatically</li>
+        <li>{{ counts.verified }} automatic checks agree</li>
         <li>{{ counts.accepted + counts.edited }} accepted or edited</li>
         <li>{{ counts.rejected }} rejected</li>
       </ul>
@@ -63,8 +63,9 @@
           <span class="badge">{{ labels[c.state] }}</span>
         </header>
         {% if c.original_value %}<p class="meta">Original model value: {{ c.original_value }}</p>{% endif %}
-        <p class="meta">Automatic check: {{ c.auto_status }}{% if c.confidence is not none %} · model confidence {{ '%.2f'|format(c.confidence) }}{% endif %}</p>
+        <p class="meta">Automatic check: {{ 'agrees with the model' if c.auto_status == 'verified' else c.auto_status }}{% if c.confidence is not none %} · model confidence {{ '%.2f'|format(c.confidence) }}{% endif %}</p>
         {% if c.notes %}<p class="meta">{{ c.notes }}</p>{% endif %}
+        {% if c.state == "pending" and c.auto_status in ("unsupported", "disputed") %}<p class="meta">An automatic miss is not proof the claim is wrong. Check it in the video.</p>{% endif %}
         <ul class="evidence">
         {% for e in c.evidence %}
           <li>{{ e.text }}{% if e.seek is not none and has_video %}<button type="button" class="seek" data-seek="{{ e.seek }}">Play from here</button>{% endif %}</li>

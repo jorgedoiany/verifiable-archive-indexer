@@ -226,3 +226,14 @@ def test_security_headers_and_static_assets(env):
     assert headers["x-content-type-options"] == "nosniff"
     assert client.get("/static/style.css").status_code == 200
     assert client.get("/static/review.js").status_code == 200
+
+
+def test_the_pages_never_claim_more_than_the_checks_show(env):
+    client, *_ = env
+    page = client.get("/clips/clip").text
+    assert "Automatic checks agree (not a guarantee)" in page
+    assert "Verified by automatic checks" not in page
+    assert "not proof the claim is wrong" in page
+    index = client.get("/").text
+    assert "Automatic checks agree" in index
+    assert "Verified automatically" not in index
