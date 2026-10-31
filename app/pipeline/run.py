@@ -38,6 +38,7 @@ def run_pipeline(
     fps: int = DEFAULT_FPS,
     max_concepts: int = DEFAULT_MAX_CONCEPTS,
     max_cost: float = DEFAULT_MAX_COST,
+    prompt_variant: str = "basic",
 ) -> PipelineResult:
     """Run the three stages and write <stem>.result.json next to the stage files."""
     video = Path(video)
@@ -48,7 +49,7 @@ def run_pipeline(
 
     silent = strip_audio(video, work_dir / f"{video.stem}.silent.mp4")
     claim_set, parse_errors, file_id, claims_path = run_extract_stage(
-        silent, transcript, work_dir, settings
+        silent, transcript, work_dir, settings, prompt_variant=prompt_variant
     )
     try:
         delete_file(file_id, settings)  # SAM uses its own low-fps upload
@@ -69,6 +70,7 @@ def run_pipeline(
     summary_path = work_dir / f"{video.stem}.result.json"
     summary = {
         "clip": video.name,
+        "prompt_variant": prompt_variant,
         "audio_duration_ms": transcript.audio_duration_ms,
         "transcript_turns": len(transcript.turns),
         "claims_total": len(outcome.claim_set.claims),

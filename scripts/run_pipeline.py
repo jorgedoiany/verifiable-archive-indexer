@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import load_settings
+from app.pipeline.extract_parse import PROMPT_VARIANTS
 from app.pipeline.run import run_pipeline
 from app.pipeline.verify import DEFAULT_MAX_CONCEPTS
 from app.pipeline.verify_stage import DEFAULT_FPS, DEFAULT_MAX_COST
@@ -26,6 +27,7 @@ def main() -> None:
     parser.add_argument("--fps", type=int, default=DEFAULT_FPS)
     parser.add_argument("--max-concepts", type=int, default=DEFAULT_MAX_CONCEPTS)
     parser.add_argument("--max-cost", type=float, default=DEFAULT_MAX_COST)
+    parser.add_argument("--prompt", choices=PROMPT_VARIANTS, default="basic")
     args = parser.parse_args()
 
     result = run_pipeline(
@@ -35,6 +37,7 @@ def main() -> None:
         fps=args.fps,
         max_concepts=args.max_concepts,
         max_cost=args.max_cost,
+        prompt_variant=args.prompt,
     )
     sam = result.verified
     print(f"turns: {len(result.transcript.turns)}")

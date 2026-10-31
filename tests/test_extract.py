@@ -243,3 +243,17 @@ def test_model_can_be_overridden(settings, respx_mock):
     )
     call_model("file-1", "p", settings, model="muse-wonder-1.0")
     assert json.loads(route.calls.last.request.content)["model"] == "muse-wonder-1.0"
+
+
+def test_prompt_variant_reaches_the_request(settings, respx_mock):
+    route = respx_mock.post(URL).mock(
+        return_value=httpx.Response(200, json=reply(CLAIMS_TEXT))
+    )
+    extract_claims("file-1", TRANSCRIPT, settings)
+    extract_claims("file-1", TRANSCRIPT, settings, prompt_variant="inventory")
+    texts = [
+        json.loads(call.request.content)["input"][0]["content"][0]["text"]
+        for call in route.calls
+    ]
+    assert "EVERY clearly visible" not in texts[0]
+    assert "EVERY clearly visible" in texts[1]

@@ -131,3 +131,25 @@ def test_delete_failure_is_ignored(tmp_path, settings, stages, monkeypatch):
         tmp_path / "clip.mp4", tmp_path / "work", settings
     )
     assert result.status_counts[ClaimStatus.VERIFIED.value] == 1
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected"),
+    [({}, "basic"), ({"prompt_variant": "inventory"}, "inventory")],
+)
+def test_prompt_variant_is_passed_on_and_recorded(
+    tmp_path, settings, stages, monkeypatch, kwargs, expected
+):
+    seen = {}
+
+    def capture(silent, transcript, work_dir, settings, **options):
+        seen.update(options)
+        return ClaimSet(), [], "file-5", work_dir / "clip.claims.json"
+
+    monkeypatch.setattr(run_module, "run_extract_stage", capture)
+    result = run_module.run_pipeline(
+        tmp_path / "clip.mp4", tmp_path / "work", settings, **kwargs
+    )
+    assert seen == {"prompt_variant": expected}
+    saved = json.loads(result.summary_path.read_text(encoding="utf-8"))
+    assert saved["prompt_variant"] == expected
