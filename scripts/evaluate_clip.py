@@ -33,6 +33,11 @@ def main() -> None:
     metrics = evaluate_clip(stem, args.work_dir, truth)
 
     print(f"transcription word error rate: {pct(metrics.wer)}")
+    if metrics.spurious_words is not None:
+        print(
+            "words transcribed from a clip with no speech: "
+            f"{metrics.spurious_words}"
+        )
     print(f"claims: {metrics.claims_total} by status {metrics.by_status}")
     print(f"precision, all claims (model alone): {pct(metrics.precision_all)}")
     print(

@@ -104,3 +104,19 @@ def probe_duration(video: Path) -> float:
     if not math.isfinite(seconds) or seconds <= 0:
         raise MediaError(f"invalid duration: {raw!r}")
     return seconds
+
+
+def has_audio(video: Path) -> bool:
+    """True if the container has at least one audio stream."""
+    args = [
+        _ffprobe(), "-v", "error",
+        "-select_streams", "a",
+        "-show_entries", "stream=index",
+        "-of", "csv=p=0",
+        str(video),
+    ]
+    try:
+        result = subprocess.run(args, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as exc:
+        raise MediaError(f"ffprobe failed: {(exc.stderr or '')[-300:]}") from exc
+    return bool(result.stdout.strip())

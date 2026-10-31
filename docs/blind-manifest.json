@@ -1,0 +1,26 @@
+{
+  "algorithm": "sha256",
+  "clips": {
+    "blind_01.mp4": "19164a4f518fae0b8b89a7ceb84cf3d35e1c44cc45d5e658a37fe0bb28aeaed7",
+    "blind_02.mp4": "dcacb3523246a7b65936cebb601f253c3db8ddaf234d3b3a68156255444fc975",
+    "blind_03.mp4": "dda9925d137a2af4c171a5d18c8896ae3a99feffd51ea6a49a26791823baa923",
+    "blind_04.mp4": "de6c0992538b97725b88a79988654b991e1aa2f721271fb35151eea19f0629ee",
+    "blind_05.mp4": "a340a226a579b0559988dd808acb984c63d9fb8d37e87318241f9dc433b168e0",
+    "blind_06.mp4": "3de9659b14dc7a4b96f5d535d0e53fbd49fa0aa6780affe8f9ac1dfa2b9304b8",
+    "blind_07.mp4": "895182327322d91060b20a1353e739f37fd213028be8eacb4222eddfcacb17cc",
+    "blind_08.mp4": "21a0120fc121ad6da1422409787e15b853937768c3c09824303211f9a506a91f",
+    "blind_10.mp4": "502d8cee1ba4ccffec2f41fb171ba164848d18abcf3a097b7cc3e35c1cf1f7b7"
+  },
+  "created_utc": "2026-10-31T19:18:55+00:00",
+  "ground_truth": {
+    "blind_01.json": "9e6919bda340010652c9f4bafdf619e38e26f2fd629a8342bc2f7ff116883677",
+    "blind_02.json": "a1d804d2f2fae6d35dab53ce451bfe52de3b3d16bb6f621d3ebcc216eca7a59d",
+    "blind_03.json": "6f0ddf633209140fb53ec46543d02c6dd243a42e68778a2c2ffc4d7a88aaaebb",
+    "blind_04.json": "87cba8f2cffd9f39628c428f4a7014602606bf82e506a294fd1702beaabb34d9",
+    "blind_05.json": "40631e83f582590fb54208514b7324288b8a9eeecba036d635fd6e6b239ac736",
+    "blind_06.json": "97d8d2ee71357cef1e47466c8fa5fc893c12f137e9e7c3bf33f541594dee252b",
+    "blind_07.json": "8aec1f46399dbfba7f4251c2150e96161652528a3dc7e52dba9ef9f10dd9fc11",
+    "blind_08.json": "4aaeb0add51603f964a96c2af2eec11c0d5058fa010f6baf367c664c6e887d39",
+    "blind_10.json": "1892db0d194ce4b5a28e6cff42de646e611671016f0369141d64a400265478e3"
+  }
+}

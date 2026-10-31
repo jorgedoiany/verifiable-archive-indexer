@@ -177,3 +177,14 @@ def test_invalid_range_is_rejected():
                 ],
             }
         )
+
+
+def test_clip_without_speech_reports_invented_words_instead_of_wer():
+    silent = GroundTruth.model_validate({"clip": "c", "transcript": "", "items": []})
+    quiet = evaluate(ClaimSet(), "", silent)
+    assert quiet.wer is None
+    assert quiet.spurious_words == 0
+    noisy = evaluate(ClaimSet(), "Gracias por ver, ¡hasta pronto!", silent)
+    assert noisy.wer is None
+    assert noisy.spurious_words == 5
+    assert evaluate(ClaimSet(), "hola", TRUTH).spurious_words is None
