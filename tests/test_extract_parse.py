@@ -4,6 +4,7 @@ import pytest
 
 from app.pipeline.claims import ClaimStatus
 from app.pipeline.extract_parse import (
+    INVENTORY_BLOCK,
     ExtractParseError,
     apply_checks,
     build_extraction_prompt,
@@ -122,3 +123,29 @@ def test_checks_set_statuses():
 def test_prompt_asks_for_english_object_phrases():
     prompt = build_extraction_prompt(TRANSCRIPT)
     assert "English noun phrase" in prompt
+
+
+def test_prompt_asks_for_an_exhaustive_inventory():
+    prompt = build_extraction_prompt(TRANSCRIPT, "inventory")
+    assert "EVERY clearly visible" in prompt
+    assert "up to 25 objects" in prompt
+    assert "one claim per appearance" in prompt
+
+
+def test_basic_prompt_is_the_default_and_has_no_inventory_request():
+    default = build_extraction_prompt(TRANSCRIPT)
+    assert default == build_extraction_prompt(TRANSCRIPT, "basic")
+    assert "EVERY clearly visible" not in default
+    assert "English noun phrase" in default
+
+
+def test_inventory_prompt_adds_only_the_inventory_block():
+    basic = build_extraction_prompt(TRANSCRIPT, "basic")
+    inventory = build_extraction_prompt(TRANSCRIPT, "inventory")
+    assert inventory != basic
+    assert inventory.replace(INVENTORY_BLOCK, "") == basic
+
+
+def test_unknown_prompt_variant_is_rejected():
+    with pytest.raises(ValueError):
+        build_extraction_prompt(TRANSCRIPT, "creative")

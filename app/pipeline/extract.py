@@ -23,14 +23,23 @@ from app.pipeline.files_api import FilesError, delete_file, upload_video
 from app.pipeline.models import Transcript
 
 RETRY_STATUSES = {429, 500}
-# Reasoning shares the output budget; the docs advise at least 4000.
-DEFAULT_MAX_OUTPUT_TOKENS = 8_000
+# Reasoning shares the output budget; the docs advise at least 4000. An
+# exhaustive inventory needs more, and one retry with a larger budget
+# covers the long tail.
+DEFAULT_MAX_OUTPUT_TOKENS = 16_000
+RETRY_MAX_OUTPUT_TOKENS = 32_000
 
 
 class ExtractCallError(RuntimeError):
     def __init__(self, message: str, status_code: int | None = None):
         super().__init__(message)
         self.status_code = status_code
+
+
+class ExtractIncompleteError(ExtractCallError):
+    def __init__(self, reason: str | None):
+        super().__init__(f"response incomplete ({reason}); raise max_output_tokens")
+        self.reason = reason
 
 
 def output_text(body: dict) -> str:
@@ -56,13 +65,14 @@ def call_model(
     prompt: str,
     settings: Settings,
     *,
+    model: str | None = None,
     max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
     max_retries: int = 2,
     sleep: Callable[[float], None] = time.sleep,
 ) -> str:
     """Send the uploaded video and the prompt to the vision model; return its text."""
     payload = {
-        "model": settings.spark_model,
+        "model": model or settings.spark_model,
         "max_output_tokens": max_output_tokens,
         "input": [
             {
@@ -106,9 +116,7 @@ def call_model(
     if body.get("status") == "incomplete":
         details = body.get("incomplete_details")
         reason = details.get("reason") if isinstance(details, dict) else None
-        raise ExtractCallError(
-            f"response incomplete ({reason}); raise max_output_tokens"
-        )
+        raise ExtractIncompleteError(reason)
     text = output_text(body)
     if not text.strip():
         raise ExtractCallError("model returned no text")
@@ -119,9 +127,23 @@ def extract_claims(
     file_id: str, transcript: Transcript, settings: Settings, **call_kwargs
 ) -> tuple[ClaimSet, list[str]]:
     """Call the model, parse its claims, and apply the checks that need no model."""
-    text = call_model(
-        file_id, build_extraction_prompt(transcript), settings, **call_kwargs
-    )
+    variant = call_kwargs.pop("prompt_variant", "basic")
+    prompt = build_extraction_prompt(transcript, variant)
+    budget = call_kwargs.pop("max_output_tokens", DEFAULT_MAX_OUTPUT_TOKENS)
+    try:
+        text = call_model(
+            file_id, prompt, settings, max_output_tokens=budget, **call_kwargs
+        )
+    except ExtractIncompleteError as exc:
+        if exc.reason != "max_output_tokens" or budget >= RETRY_MAX_OUTPUT_TOKENS:
+            raise
+        text = call_model(
+            file_id,
+            prompt,
+            settings,
+            max_output_tokens=min(budget * 2, RETRY_MAX_OUTPUT_TOKENS),
+            **call_kwargs,
+        )
     claim_set, errors = parse_model_output(text)
     checked = apply_checks(claim_set, transcript, transcript.audio_duration_ms / 1000)
     return checked, errors
@@ -134,6 +156,7 @@ def run_extract_stage(
     settings: Settings,
     *,
     expires_seconds: int = 86_400,
+    prompt_variant: str = "basic",
 ) -> tuple[ClaimSet, list[str], str, Path]:
     """Upload the audio-free video, extract claims, write <stem>.claims.json.
 
@@ -146,7 +169,9 @@ def run_extract_stage(
 
     file_id = upload_video(silent_video, settings, expires_seconds=expires_seconds)
     try:
-        claim_set, errors = extract_claims(file_id, transcript, settings)
+        claim_set, errors = extract_claims(
+            file_id, transcript, settings, prompt_variant=prompt_variant
+        )
     except BaseException:
         try:
             delete_file(file_id, settings)
