@@ -63,7 +63,7 @@ def test_catalog_separates_automatic_archivist_and_rejected():
     catalog = build_catalog("clip", CLAIMS, decided_store())
     by_id = {e.claim_id: e for e in catalog.entries}
     assert list(by_id) == ["a", "b", "c"]
-    assert (by_id["a"].final_status, by_id["a"].origin) == ("verified", "automatic checks")
+    assert (by_id["a"].final_status, by_id["a"].origin) == ("checks_agree", "automatic checks")
     assert (by_id["b"].final_status, by_id["b"].origin) == ("accepted", "archivist")
     assert by_id["b"].review_note == "looks right"
     assert by_id["c"].final_status == "edited"
@@ -145,3 +145,20 @@ def test_export_catalog_reads_the_run_and_the_review_from_disk(tmp_path):
 def test_export_catalog_needs_a_verified_run(tmp_path):
     with pytest.raises(FileNotFoundError):
         export_catalog("clip", tmp_path)
+
+
+def test_exports_say_checks_agree_and_carry_the_disclaimer():
+    catalog = build_catalog("clip", CLAIMS, ReviewStore())
+    assert catalog.entries[0].final_status == "checks_agree"
+    assert "not a guarantee" in catalog.note
+    data = json.loads(catalog_to_json(catalog))
+    assert "verified" not in {entry["final_status"] for entry in data["entries"]}
+    assert "not a guarantee" in data["note"]
+    assert "checks_agree" in catalog_to_csv(catalog)
+
+
+def test_an_automatic_miss_never_discards_a_claim():
+    catalog = build_catalog("clip", CLAIMS, ReviewStore(), include_pending=True)
+    assert catalog.rejected_claim_ids == []
+    pending = {e.claim_id for e in catalog.entries if e.final_status == "pending"}
+    assert {"c", "d"} <= pending
