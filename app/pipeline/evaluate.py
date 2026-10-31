@@ -67,6 +67,7 @@ class Metrics:
     rejected_but_true: int
     review_queue: int
     by_status: dict[str, int]
+    spurious_words: int | None = None
 
 
 def load_ground_truth(path: Path) -> GroundTruth:
@@ -123,6 +124,13 @@ def claim_matches_item(claim: Claim, item: TruthItem) -> bool:
     )
 
 
+def _spurious_words(reference: str, hypothesis: str) -> int | None:
+    """Words transcribed from a clip whose reference has no speech; else None."""
+    if normalize_text(reference):
+        return None
+    return len(normalize_text(hypothesis).split())
+
+
 def _ratio(numerator: int, denominator: int) -> float | None:
     return None if denominator == 0 else numerator / denominator
 
@@ -158,6 +166,7 @@ def evaluate(
         rejected_but_true=sum(is_correct(c) for c in rejected),
         review_queue=by_status.get(ClaimStatus.PROPOSED.value, 0),
         by_status=dict(by_status),
+        spurious_words=_spurious_words(truth.transcript, transcript_text),
     )
 
 
