@@ -120,3 +120,23 @@ def test_rejects_too_big(tmp_path, monkeypatch):
     wav = make_wav(tmp_path / "b.wav", seconds=1)
     with pytest.raises(ValueError):
         transcribe.validate_wav(wav)
+
+
+def test_a_timeout_is_retried_then_succeeds(tmp_path, settings, respx_mock):
+    wav = make_wav(tmp_path / "a.wav")
+    route = respx_mock.post(URL).mock(
+        side_effect=[httpx.ReadTimeout("slow"), httpx.Response(200, json=SAMPLE)]
+    )
+    waits = []
+    result = transcribe_file(wav, settings, sleep=waits.append)
+    assert result.audio_duration_ms == 1000
+    assert route.call_count == 2
+    assert waits == [1]
+
+
+def test_repeated_timeouts_become_a_clear_error(tmp_path, settings, respx_mock):
+    wav = make_wav(tmp_path / "a.wav")
+    route = respx_mock.post(URL).mock(side_effect=httpx.ConnectTimeout("slow"))
+    with pytest.raises(TranscribeError, match="network error"):
+        transcribe_file(wav, settings, max_retries=1, sleep=lambda s: None)
+    assert route.call_count == 2

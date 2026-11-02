@@ -89,10 +89,19 @@ def segment_concept(
         "Content-Type": "application/json",
     }
 
-    with httpx.Client(timeout=600.0) as client:
+    with httpx.Client(timeout=httpx.Timeout(900.0, connect=30.0)) as client:
         response: httpx.Response | None = None
         for attempt in range(max_retries + 1):
-            response = client.post(url, headers=headers, json=payload)
+            try:
+                response = client.post(url, headers=headers, json=payload)
+            except httpx.TransportError as exc:  # timeouts and connection errors
+                if attempt < max_retries:
+                    sleep(2**attempt)
+                    continue
+                raise SamCallError(
+                    f"network error after {attempt + 1} attempts: "
+                    f"{type(exc).__name__}"
+                ) from exc
             if response.status_code in RETRY_STATUSES and attempt < max_retries:
                 sleep(2**attempt)
                 continue

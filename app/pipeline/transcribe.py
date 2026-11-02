@@ -17,6 +17,7 @@ MAX_BYTES = 32 * 1024 * 1024  # documented request-body cap
 MAX_SECONDS = 10 * 60  # documented audio cap
 ALLOWED_RATES = (16_000, 24_000)
 RETRY_STATUSES = {429, 500}
+TIMEOUT = httpx.Timeout(300.0, connect=30.0)
 
 
 class TranscribeError(RuntimeError):
@@ -75,21 +76,30 @@ def transcribe_file(
     headers = {"Authorization": f"Bearer {settings.api_key}"}
     audio_bytes = path.read_bytes()
 
-    with httpx.Client(timeout=120.0) as client:
+    with httpx.Client(timeout=TIMEOUT) as client:
         response: httpx.Response | None = None
         for attempt in range(max_retries + 1):
-            response = client.post(
-                url,
-                headers=headers,
-                files={
-                    "request": (
-                        None,
-                        json.dumps(request_part),
-                        "application/json",
-                    ),
-                    "audio": (path.name, audio_bytes, "audio/wav"),
-                },
-            )
+            try:
+                response = client.post(
+                    url,
+                    headers=headers,
+                    files={
+                        "request": (
+                            None,
+                            json.dumps(request_part),
+                            "application/json",
+                        ),
+                        "audio": (path.name, audio_bytes, "audio/wav"),
+                    },
+                )
+            except httpx.TransportError as exc:  # timeouts and connection errors
+                if attempt < max_retries:
+                    sleep(2**attempt)
+                    continue
+                raise TranscribeError(
+                    f"network error after {attempt + 1} attempts: "
+                    f"{type(exc).__name__}"
+                ) from exc
             if response.status_code in RETRY_STATUSES and attempt < max_retries:
                 sleep(2**attempt)
                 continue

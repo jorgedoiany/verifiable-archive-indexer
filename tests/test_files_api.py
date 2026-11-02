@@ -112,3 +112,25 @@ def test_delete_server_error_raises(settings, respx_mock):
     )
     with pytest.raises(FilesError):
         delete_file("file-1", settings)
+
+
+def test_upload_retries_a_timeout(clip, settings, respx_mock):
+    route = respx_mock.post(FILES_URL).mock(
+        side_effect=[httpx.ReadTimeout("slow"), httpx.Response(200, json=UPLOADED)]
+    )
+    waits = []
+    assert upload_video(clip, settings, sleep=waits.append).startswith("file-")
+    assert route.call_count == 2
+    assert waits == [1]
+
+
+def test_upload_gives_up_with_a_clear_error(clip, settings, respx_mock):
+    respx_mock.post(FILES_URL).mock(side_effect=httpx.ConnectError("down"))
+    with pytest.raises(FilesError, match="network error"):
+        upload_video(clip, settings, max_retries=0, sleep=lambda s: None)
+
+
+def test_a_network_error_while_deleting_is_a_files_error(settings, respx_mock):
+    respx_mock.delete(f"{FILES_URL}/file-1").mock(side_effect=httpx.ReadTimeout("slow"))
+    with pytest.raises(FilesError, match="network error"):
+        delete_file("file-1", settings)

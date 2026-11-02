@@ -128,3 +128,23 @@ def test_estimate_cost():
     assert estimate_cost(205, requests=0) == 0
     with pytest.raises(ValueError):
         estimate_cost(-1)
+
+
+def test_a_timeout_is_retried_then_succeeds(settings, respx_mock):
+    route = respx_mock.post(URL).mock(
+        side_effect=[httpx.ReadTimeout("slow"), httpx.Response(200, json=reply(SAM_TEXT))]
+    )
+    waits = []
+    result = segment_concept("file-1", "chair", settings, sleep=waits.append)
+    assert len(result.detections) == 2
+    assert route.call_count == 2
+    assert waits == [1]
+
+
+def test_repeated_timeouts_become_a_sam_error_so_one_concept_cannot_stop_a_clip(
+    settings, respx_mock
+):
+    route = respx_mock.post(URL).mock(side_effect=httpx.ConnectError("down"))
+    with pytest.raises(SamCallError, match="network error"):
+        segment_concept("file-1", "chair", settings, max_retries=1, sleep=lambda s: None)
+    assert route.call_count == 2
