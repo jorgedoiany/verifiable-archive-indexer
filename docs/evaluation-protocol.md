@@ -63,6 +63,18 @@ Transcribe, Muse Spark 1.3 and SAM 3.1.
 - All results are reported, including bad ones. No clip is dropped after the
   run.
 
+## Clarifications (before the blind run)
+
+- Judging sheet. "Exists" means the object is clearly visible on screen at
+  some moment inside the time range the model cited (one second of margin is
+  allowed). "Does not exist" means it is not visible in that range, whether
+  it is absent from the clip or only appears at another time, so the figures
+  call these claims "not visible in the cited range", not "invented". A claim
+  with no cited time range is judged against the whole clip. The sheet shows
+  only the clip, the object and the range, in shuffled order.
+- Proportions are reported with the counts behind them and a 95% Wilson
+  interval, and also with every "unsure" counted as not visible.
+
 ## Deviations
 
 - 2026-10-31, before any pipeline run on a blind clip: the label of blind_03

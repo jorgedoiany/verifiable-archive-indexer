@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Judge {{ view.position }} of {{ view.total }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/judge.css">
+  <script src="/static/judge.js" defer></script>
+</head>
+<body>
+{% set labels = {
+  "exists": "Visible in that range",
+  "not_exists": "Not visible in that range",
+  "unsure": "Unsure"
+} %}
+<main class="page judge">
+  <p><a href="/">Progress</a> · item {{ view.position }} of {{ view.total }} · {{ judged }} judged</p>
+  <h1>{{ view.value }}</h1>
+  <p class="lead">Clip {{ view.stem }}{% if view.start_s is not none %} · cited range {{ '%.1f'|format(view.start_s) }} to {{ '%.1f'|format(view.end_s) }} s{% else %} · no time range cited, so judge the whole clip{% endif %}</p>
+  <p class="meta">Is this object clearly visible on screen at some moment inside that range? One second of margin is fine. If you cannot clearly see it there, answer "not visible", even if it appears somewhere else in the clip.</p>
+  <video id="player" controls preload="auto" src="/media/{{ view.stem }}"{% if view.start_s is not none %} data-start="{{ view.start_s }}" data-end="{{ view.end_s }}"{% endif %}></video>
+  <p><button type="button" id="play-range">Play the cited range (R)</button></p>
+  {% if view.verdict %}
+  <p class="meta">Your current judgment: {{ labels[view.verdict] }}{% if view.note %} · note: {{ view.note }}{% endif %}. You can change it below.</p>
+  {% endif %}
+  <form method="post" action="/judge/{{ view.item_id }}" class="verdicts">
+    <button type="submit" disabled hidden tabindex="-1" aria-hidden="true"></button>
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Note (optional)
+      <input type="text" name="note" maxlength="200" value="{{ view.note or '' }}">
+    </label>
+    <div class="buttons">
+      <button type="submit" name="verdict" value="exists">Visible in that range (1)</button>
+      <button type="submit" name="verdict" value="not_exists">Not visible in that range (2)</button>
+      <button type="submit" name="verdict" value="unsure">Unsure (3)</button>
+    </div>
+  </form>
+  <p class="meta">
+    {% if view.prev_id %}<a href="/judge/{{ view.prev_id }}">Previous</a>{% endif %}
+    {% if view.next_id %}<a href="/judge/{{ view.next_id }}">Next</a>{% endif %}
+  </p>
+</main>
+</body>
+</html>
