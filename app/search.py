@@ -32,6 +32,7 @@ class SearchResult:
     total: int  # matches before the display cap
     clips_searched: int
     clips_unreadable: int
+    clips_with_matches: int  # distinct clips among all matches
 
 
 def matches(value: str, query: str) -> bool:
@@ -75,4 +76,10 @@ def search_catalog(
                 continue
             if matches(view.value, query):
                 hits.append(Hit(stem, view))
-    return SearchResult(tuple(hits[:MAX_RESULTS]), len(hits), searched, unreadable)
+    return SearchResult(
+        tuple(hits[:MAX_RESULTS]),
+        len(hits),
+        searched,
+        unreadable,
+        len({hit.stem for hit in hits}),
+    )

@@ -34,9 +34,9 @@
     <label class="inline"><input type="checkbox" name="include_pending" value="true"{% if include_pending %} checked{% endif %}> Also show claims that still need review (not confirmed)</label>
     <button type="submit">Search</button>
   </form>
-  <video id="player" controls preload="none"></video>
+  <video id="player" controls preload="metadata"></video>
   <p class="meta" id="now-playing">Press "Play from here" on a result to watch it.</p>
-  <h2>{{ result.total }} result{{ '' if result.total == 1 else 's' }} in {{ result.clips_searched }} clip{{ '' if result.clips_searched == 1 else 's' }}</h2>
+  <h2>{{ result.total }} result{{ '' if result.total == 1 else 's' }} in {{ result.clips_with_matches }} clip{{ '' if result.clips_with_matches == 1 else 's' }} · {{ result.clips_searched }} searched</h2>
   {% if result.total > result.hits|length %}<p class="meta">Showing the first {{ result.hits|length }}. Narrow the search to see the rest.</p>{% endif %}
   {% if result.clips_unreadable %}<p class="meta">{{ result.clips_unreadable }} clip(s) could not be read and were skipped.</p>{% endif %}
   {% for hit in result.hits %}

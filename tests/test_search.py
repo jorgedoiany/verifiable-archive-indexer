@@ -158,3 +158,17 @@ def test_an_unreadable_run_is_counted_and_the_others_still_searched(work):
 def test_a_folder_without_runs_has_no_results(tmp_path):
     result = search_catalog(tmp_path / "nothing")
     assert (result.total, result.clips_searched) == (0, 0)
+
+
+def test_clips_with_matches_counts_distinct_clips(work):
+    write_run(
+        work,
+        "clip_b",
+        [make_claim("x", "object", "red kettle", "verified", visual(2.0, 3.0))],
+    )
+    both = search_catalog(work, "red")
+    assert (both.total, both.clips_with_matches, both.clips_searched) == (2, 2, 2)
+    one = search_catalog(work, "bicycle")
+    assert (one.total, one.clips_with_matches, one.clips_searched) == (1, 1, 2)
+    none = search_catalog(work, "zebra")
+    assert (none.total, none.clips_with_matches) == (0, 0)

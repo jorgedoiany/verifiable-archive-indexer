@@ -314,3 +314,20 @@ def test_search_is_linked_and_its_assets_are_served(env):
     assert 'href="/search"' in client.get("/clips/clip").text
     assert client.get("/static/search.js").status_code == 200
     assert client.get("/static/search.css").status_code == 200
+
+
+def test_the_search_player_loads_its_video_so_play_from_here_can_seek(env):
+    client, *_ = env
+    page = client.get("/search").text
+    assert 'preload="metadata"' in page
+    assert 'preload="none"' not in page
+    script = client.get("/static/search.js").text
+    assert "player.load()" in script
+    assert "The video could not be loaded." in script
+
+
+def test_the_search_heading_counts_the_clips_with_matches(env):
+    client, *_ = env
+    page = client.get("/search", params={"q": "bicycle"}).text
+    assert "1 result in 1 clip" in page
+    assert "1 searched" in page
