@@ -4,6 +4,7 @@ import pytest
 
 from app.judge_report import (
     GroupStats,
+    is_attribute_note,
     summarize_judgments,
     summary_to_dict,
     wilson_interval,
@@ -139,3 +140,53 @@ def test_missing_sheet_and_vanished_claims_are_errors(tmp_path, work):
     write_run(work, [CLAIMS[4]])  # the run lost its claims
     with pytest.raises(JudgingDataError):
         summarize_judgments(work)
+
+
+def judge_with_notes(work, table):
+    sheet = build_sheet(work, seed=1)
+    ids = {item.claim_id: item.item_id for item in sheet.items}
+    store = JudgmentStore()
+    for claim_id, (verdict, note) in table.items():
+        store = record_judgment(store, sheet, ids[claim_id], verdict, note=note)
+    save_judgments(work, store)
+
+
+@pytest.mark.parametrize(
+    ("note", "expected"),
+    [
+        ("attr: it is red, not pink", True),
+        ("  ATTR: rojo", True),
+        ("Attr:x", True),
+        ("attribute is wrong", False),
+        ("see attr: later", False),
+        ("", False),
+        (None, False),
+    ],
+)
+def test_is_attribute_note(note, expected):
+    assert is_attribute_note(note) is expected
+
+
+def test_attribute_notes_are_counted_only_on_visible_judgments(work):
+    judge_with_notes(
+        work,
+        {
+            "a1": (Verdict.EXISTS, "attr: it is a bike"),
+            "a2": (Verdict.EXISTS, "clear"),
+            "a3": (Verdict.NOT_EXISTS, "attr: other thing"),
+            "a4": (Verdict.EXISTS, "ATTR: wrong size"),
+        },
+    )
+    summary = summarize_judgments(work)
+    assert summary.groups["all"].attribute_notes == 2
+    assert summary.groups["checks_agree"].attribute_notes == 1
+    assert summary.groups["automatic_miss"].attribute_notes == 0
+    assert summary.groups["unchecked"].attribute_notes == 1
+    assert summary.attribute_notes_elsewhere == 1
+
+
+def test_the_dict_form_carries_the_attribute_counts(work):
+    judge_with_notes(work, {"a1": (Verdict.EXISTS, "attr: it is a bike")})
+    data = summary_to_dict(summarize_judgments(work))
+    assert data["groups"]["all"]["attribute_notes"] == 1
+    assert data["attribute_notes_elsewhere"] == 0
