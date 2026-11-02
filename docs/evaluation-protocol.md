@@ -85,6 +85,11 @@ Transcribe, Muse Spark 1.3 and SAM 3.1.
   (checked by scripts/freeze_blind.py). The previous manifest is in the Git
   history. Because that reference has one word, the word error rate is
   reported over all words pooled across clips, not averaged per clip.
+- 2026-11-01, after the blind run with the basic prompt but before any of its
+  results was looked at: the pipeline does not record model token counts per
+  clip, so the cost reported is the SAM frames and their price. The
+  transcription and extraction calls are small by comparison and are not
+  itemized.
 
 ## Observations before the blind run
 
