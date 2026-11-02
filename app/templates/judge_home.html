@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blind judging</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/judge.css">
+</head>
+<body>
+<main class="page judge">
+  <h1>Blind judging</h1>
+  <p class="lead">You see the clip, an object and the time range a model cited. Nothing else is shown.</p>
+  <p>{{ judged }} of {{ total }} judged.</p>
+  {% if next_id %}
+  <p><a href="/judge/{{ next_id }}">Continue with the next unjudged item</a></p>
+  {% else %}
+  <p>Everything is judged. Run <code>python scripts/judge_report.py</code> to get the numbers.</p>
+  {% endif %}
+  {% if first_id %}<p><a href="/judge/{{ first_id }}">Go through the items from the first one</a></p>{% endif %}
+  <p class="meta">Keys on an item page: 1 visible, 2 not visible, 3 unsure, R replays the cited range.</p>
+</main>
+</body>
+</html>

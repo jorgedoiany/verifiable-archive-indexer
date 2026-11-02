@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local media and generated artifacts
+data/clips/
+data/work/
+
+# macOS
+.DS_Store
+
+# Personal ground truth (decide before publishing)
+data/ground_truth/*.json
+!data/ground_truth/template.json
+
+# Experiment runs
+data/work_*/
