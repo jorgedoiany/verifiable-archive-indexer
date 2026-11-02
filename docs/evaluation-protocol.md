@@ -108,6 +108,18 @@ Transcribe, Muse Spark 1.3 and SAM 3.1.
   attempts are overwritten without having been looked at, and the clips that
   completed are not rerun. The reported cost covers completed runs; failed
   attempts may also have been billed and are not included.
+- 2026-11-02, after judging the inventory run and before any judging report was
+  generated or any number seen: all 162 object claims of the inventory run were
+  judged (not a sample of 100). While judging, the author asked the assistant
+  how to mark about a dozen claims, describing the claim and what was on screen;
+  the assistant never saw any verifier verdict. This may have moved some claims
+  between "visible with an attr: note" and "not visible". Two rules appeared
+  during judging: a wrong material counts as an attribute error, like a wrong
+  color; and for borderline colors (white versus beige) one criterion is chosen
+  and used throughout. The precision used for the decision on the default prompt
+  is the one defined above (visible over visible plus not visible, with attr:
+  notes counted as visible). The strict version, counting attr: notes as errors,
+  is reported next to it.
 
 ## Observations before the blind run
 
