@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Search</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/search.css">
+  <script src="/static/search.js" defer></script>
+</head>
+<body>
+{% set labels = {
+  "pending": "Needs review (not confirmed)",
+  "verified": "Automatic checks agree (not a guarantee)",
+  "accepted": "Accepted by archivist",
+  "edited": "Edited by archivist"
+} %}
+<main class="page">
+  <p><a href="/">All clips</a></p>
+  <h1>Search</h1>
+  <p class="lead">Find what is in the archive and jump to the moment it appears. This reads the catalogs already produced and calls no API. Claims the archivist rejected never show up.</p>
+  <form method="get" action="/search" class="search-form">
+    <label>Search words
+      <input type="text" name="q" value="{{ q }}" maxlength="100" autofocus>
+    </label>
+    <label>Category
+      <select name="category">
+        <option value="">All</option>
+        {% for choice in categories %}
+        <option value="{{ choice }}"{% if choice == category %} selected{% endif %}>{{ choice }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="inline"><input type="checkbox" name="include_pending" value="true"{% if include_pending %} checked{% endif %}> Also show claims that still need review (not confirmed)</label>
+    <button type="submit">Search</button>
+  </form>
+  <video id="player" controls preload="metadata"></video>
+  <p class="meta" id="now-playing">Press "Play from here" on a result to watch it.</p>
+  <h2>{{ result.total }} result{{ '' if result.total == 1 else 's' }} in {{ result.clips_with_matches }} clip{{ '' if result.clips_with_matches == 1 else 's' }} · {{ result.clips_searched }} searched</h2>
+  {% if result.total > result.hits|length %}<p class="meta">Showing the first {{ result.hits|length }}. Narrow the search to see the rest.</p>{% endif %}
+  {% if result.clips_unreadable %}<p class="meta">{{ result.clips_unreadable }} clip(s) could not be read and were skipped.</p>{% endif %}
+  {% for hit in result.hits %}
+  {% set c = hit.view %}
+  <article class="claim state-{{ c.state }}">
+    <header>
+      <span class="category">{{ c.category }}</span>
+      <h3>{{ c.value }}</h3>
+      <span class="badge">{{ labels[c.state] }}</span>
+    </header>
+    <p class="meta">Clip <a href="/clips/{{ hit.stem }}#claim-{{ c.position }}">{{ hit.stem }}</a></p>
+    {% if c.original_value %}<p class="meta">Original model value: {{ c.original_value }}</p>{% endif %}
+    <ul class="evidence">
+    {% for e in c.evidence %}
+      <li>{{ e.text }}{% if e.seek is not none and hit.stem in videos %}<button type="button" class="seek" data-play data-stem="{{ hit.stem }}" data-at="{{ e.seek }}">Play from here</button>{% endif %}</li>
+    {% endfor %}
+    </ul>
+  </article>
+  {% else %}
+  <p>Nothing matches. Try fewer words, or tick the box to include claims that still need review.</p>
+  {% endfor %}
+</main>
+</body>
+</html>

@@ -27,6 +27,7 @@ from app.pipeline.review import (
 )
 from app.ranges import serve_video
 from app.run_data import RunData, is_valid_stem, list_stems, load_run
+from app.search import CATEGORY_CHOICES, MAX_QUERY_CHARS, search_catalog
 from app.views import build_views, count_states
 
 BASE_DIR = Path(__file__).parent
@@ -209,6 +210,39 @@ def create_app(
             body,
             media_type="text/csv",
             headers={"Content-Disposition": f'attachment; filename="{stem}.catalog.csv"'},
+        )
+
+    @app.get("/search")
+    def search(
+        request: Request,
+        q: str = "",
+        category: str = "",
+        include_pending: bool = False,
+    ):
+        query = q.strip()[:MAX_QUERY_CHARS]
+        try:
+            result = search_catalog(
+                work_dir,
+                query,
+                category=category or None,
+                include_pending=include_pending,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Unknown category.") from exc
+        videos = {
+            hit.stem for hit in result.hits if (clips_dir / f"{hit.stem}.mp4").is_file()
+        }
+        return templates.TemplateResponse(
+            request,
+            "search.html",
+            {
+                "q": query,
+                "category": category,
+                "categories": CATEGORY_CHOICES,
+                "include_pending": include_pending,
+                "result": result,
+                "videos": videos,
+            },
         )
 
     @app.get("/media/{stem}")
