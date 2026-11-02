@@ -128,3 +128,28 @@ Transcribe, Muse Spark 1.3 and SAM 3.1.
   nobody spoke. This is reported as a limitation: invented speech can reach
   the extraction prompt as if it were evidence. The evaluation counts invented
   words separately on clips without speech.
+
+## Decision on the default prompt (2026-11-02)
+
+The criteria fixed above were met. With the inventory prompt, 147 of the 149
+decided object claims were visible in the cited range (98.7%, 95% interval 95.2%
+to 99.6%), against the 90% required, and the coverage of the labeled objects by
+name rose from 21.0% (basic prompt) to 62.9%, against the 10 points required.
+The inventory prompt is now the default; `--prompt basic` keeps the old one.
+
+Caveats that go with the decision:
+
+- 13 of the 162 inventory claims were judged "unsure", and 10 of the visible ones
+  had a wrong attribute (a wrong color or material). The strict precision, which
+  counts those as errors, is printed by `scripts/judge_report.py` next to the
+  protocol's definition and is the figure to quote with it.
+- The author consulted the assistant while judging about a dozen claims (see the
+  deviation above), so some judgments may have moved.
+- Only 2 claims were judged not visible, so these results cannot say whether the
+  automatic checks catch invented objects. They did accept claims with a wrong
+  color or material, because a segmentation match looks for the noun, not the
+  adjective. For the claims where the checks found no match, 23 of the 24
+  decided ones were visible, which is why a miss never discards a claim.
+- Nine clips of 20 seconds from one person, with that person as the only judge,
+  who also recorded and labeled the clips. Coverage depends on name matching and
+  is an estimate.

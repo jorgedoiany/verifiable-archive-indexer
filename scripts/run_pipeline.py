@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument("--fps", type=int, default=DEFAULT_FPS)
     parser.add_argument("--max-concepts", type=int, default=DEFAULT_MAX_CONCEPTS)
     parser.add_argument("--max-cost", type=float, default=DEFAULT_MAX_COST)
-    parser.add_argument("--prompt", choices=PROMPT_VARIANTS, default="basic")
+    parser.add_argument("--prompt", choices=PROMPT_VARIANTS, default="inventory")
     args = parser.parse_args()
 
     result = run_pipeline(

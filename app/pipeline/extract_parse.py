@@ -31,7 +31,7 @@ INVENTORY_BLOCK = (
 )
 
 
-def build_extraction_prompt(transcript: Transcript, variant: str = "basic") -> str:
+def build_extraction_prompt(transcript: Transcript, variant: str = "inventory") -> str:
     if variant not in PROMPT_VARIANTS:
         raise ValueError(f"unknown prompt variant: {variant!r}")
     lines = []

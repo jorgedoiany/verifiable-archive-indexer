@@ -69,6 +69,16 @@ class GroupStats:
     def interval(self) -> tuple[float, float] | None:
         return wilson_interval(self.exists, self.decided)
 
+    @property
+    def strict_share_existing(self) -> float | None:
+        """Share visible when claims with a wrong attribute count as errors."""
+        if self.decided == 0:
+            return None
+        return (self.exists - self.attribute_notes) / self.decided
+
+    def strict_interval(self) -> tuple[float, float] | None:
+        return wilson_interval(self.exists - self.attribute_notes, self.decided)
+
 
 @dataclass(frozen=True, slots=True)
 class JudgingSummary:
@@ -130,6 +140,7 @@ def summary_to_dict(summary: JudgingSummary) -> dict:
     groups = {}
     for name, stats in summary.groups.items():
         interval = stats.interval()
+        strict = stats.strict_interval()
         groups[name] = {
             "judged": stats.judged,
             "exists": stats.exists,
@@ -138,6 +149,10 @@ def summary_to_dict(summary: JudgingSummary) -> dict:
             "attribute_notes": stats.attribute_notes,
             "share_existing": stats.share_existing,
             "interval_95": None if interval is None else [interval[0], interval[1]],
+            "strict_share_existing": stats.strict_share_existing,
+            "strict_interval_95": None
+            if strict is None
+            else [strict[0], strict[1]],
             "share_counting_unsure_as_missing": stats.share_counting_unsure_as_missing,
         }
     return {

@@ -135,7 +135,7 @@ def test_delete_failure_is_ignored(tmp_path, settings, stages, monkeypatch):
 
 @pytest.mark.parametrize(
     ("kwargs", "expected"),
-    [({}, "basic"), ({"prompt_variant": "inventory"}, "inventory")],
+    [({}, "inventory"), ({"prompt_variant": "basic"}, "basic")],
 )
 def test_prompt_variant_is_passed_on_and_recorded(
     tmp_path, settings, stages, monkeypatch, kwargs, expected

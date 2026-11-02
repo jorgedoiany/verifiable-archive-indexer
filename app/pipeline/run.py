@@ -38,7 +38,7 @@ def run_pipeline(
     fps: int = DEFAULT_FPS,
     max_concepts: int = DEFAULT_MAX_CONCEPTS,
     max_cost: float = DEFAULT_MAX_COST,
-    prompt_variant: str = "basic",
+    prompt_variant: str = "inventory",
 ) -> PipelineResult:
     """Run the three stages and write <stem>.result.json next to the stage files."""
     video = Path(video)

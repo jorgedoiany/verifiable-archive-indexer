@@ -190,3 +190,28 @@ def test_the_dict_form_carries_the_attribute_counts(work):
     data = summary_to_dict(summarize_judgments(work))
     assert data["groups"]["all"]["attribute_notes"] == 1
     assert data["attribute_notes_elsewhere"] == 0
+
+
+def test_strict_share_counts_wrong_attributes_as_errors():
+    stats = GroupStats(judged=12, exists=10, not_exists=1, unsure=1, attribute_notes=2)
+    assert stats.decided == 11
+    assert stats.share_existing == pytest.approx(10 / 11)
+    assert stats.strict_share_existing == pytest.approx(8 / 11)
+    low, high = stats.strict_interval()
+    assert low < 8 / 11 < high
+    assert GroupStats().strict_share_existing is None
+    assert GroupStats().strict_interval() is None
+
+
+def test_the_dict_form_carries_the_strict_share(work):
+    judge_with_notes(
+        work,
+        {
+            "a1": (Verdict.EXISTS, "attr: it is a bike"),
+            "a2": (Verdict.EXISTS, "clear"),
+        },
+    )
+    data = summary_to_dict(summarize_judgments(work))
+    assert data["groups"]["all"]["strict_share_existing"] == pytest.approx(0.5)
+    assert len(data["groups"]["all"]["strict_interval_95"]) == 2
+    assert data["groups"]["unchecked"]["strict_share_existing"] is None

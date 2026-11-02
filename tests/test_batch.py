@@ -6,6 +6,7 @@ from app.batch import (
     BatchReportError,
     check_blind_frozen,
     load_report,
+    pending_stems,
     run_batch,
     select_stems,
 )
@@ -219,3 +220,11 @@ def test_blind_clips_are_refused_without_a_manifest_but_tuning_clips_are_not(tmp
     with pytest.raises(FreezeError, match="cannot run blind clips"):
         check_blind_frozen(["blind_01"], missing, clips_dir, truth)
     check_blind_frozen(["tune_01"], missing, clips_dir, truth)  # no check needed
+
+
+def test_pending_stems_lists_only_clips_without_a_result(tmp_path):
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "tune_01.result.json").write_text("{}", encoding="utf-8")
+    assert pending_stems(["tune_01", "tune_02"], work) == ["tune_02"]
+    assert pending_stems([], work) == []
