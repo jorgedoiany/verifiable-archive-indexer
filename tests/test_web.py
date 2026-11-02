@@ -237,3 +237,97 @@ def test_the_pages_never_claim_more_than_the_checks_show(env):
     index = client.get("/").text
     assert "Automatic checks agree" in index
     assert "Verified automatically" not in index
+
+
+
+def test_search_finds_confirmed_claims_with_a_play_button(env):
+    client, *_ = env
+    page = client.get("/search", params={"q": "bicy"}).text
+    assert "1 result in 1 clip" in page
+    assert "bicycle" in page
+    assert "Automatic checks agree (not a guarantee)" in page
+    assert 'data-play' in page
+    assert 'data-at="4.0"' in page
+
+
+def test_search_hides_claims_that_need_review_unless_asked(env):
+    client, *_ = env
+    assert "0 results" in client.get("/search", params={"q": "chair"}).text
+    page = client.get(
+        "/search", params={"q": "chair", "include_pending": "true"}
+    ).text
+    assert "1 result in 1 clip" in page
+    assert "Needs review (not confirmed)" in page
+
+
+def test_search_escapes_the_query_and_the_claim_text(env):
+    client, *_ = env
+    page = client.get(
+        "/search", params={"q": "<script>alert(1)</script>", "include_pending": "true"}
+    ).text
+    assert "<script>alert(1)</script>" not in page
+    assert "&lt;script&gt;" in page
+
+
+def test_search_filters_by_category_and_rejects_unknown_ones(env):
+    client, *_ = env
+    page = client.get(
+        "/search", params={"category": "place", "include_pending": "true"}
+    ).text
+    assert "Santo Domingo" in page
+    assert "bicycle" not in page
+    assert client.get("/search", params={"category": "colour"}).status_code == 400
+
+
+def test_search_follows_the_archivists_decisions(env):
+    client, token, *_ = env
+    decide(client, token, "b", "accepted")
+    decide(client, token, "c", "edited", value="red chair")
+    decide(client, token, "d", "rejected")
+    chair = client.get("/search", params={"q": "chair"}).text
+    assert "red chair" in chair
+    assert "Edited by archivist" in chair
+    assert "Original model value: chair" in chair
+    assert "Accepted by archivist" in client.get("/search", params={"q": "santo"}).text
+    gone = client.get("/search", params={"q": "script", "include_pending": "true"}).text
+    assert "0 results" in gone
+
+
+def test_a_result_without_its_video_has_no_play_button(env):
+    client, _, _, clips = env
+    (clips / "clip.mp4").unlink()
+    page = client.get("/search", params={"q": "bicycle"}).text
+    assert "1 result" in page
+    assert "data-play" not in page
+
+
+def test_a_very_long_query_is_cut_and_the_page_still_works(env):
+    client, *_ = env
+    page = client.get("/search", params={"q": "a" * 500}).text
+    assert "a" * 101 not in page
+    assert "0 results" in page
+
+
+def test_search_is_linked_and_its_assets_are_served(env):
+    client, *_ = env
+    assert 'href="/search"' in client.get("/").text
+    assert 'href="/search"' in client.get("/clips/clip").text
+    assert client.get("/static/search.js").status_code == 200
+    assert client.get("/static/search.css").status_code == 200
+
+
+def test_the_search_player_loads_its_video_so_play_from_here_can_seek(env):
+    client, *_ = env
+    page = client.get("/search").text
+    assert 'preload="metadata"' in page
+    assert 'preload="none"' not in page
+    script = client.get("/static/search.js").text
+    assert "player.load()" in script
+    assert "The video could not be loaded." in script
+
+
+def test_the_search_heading_counts_the_clips_with_matches(env):
+    client, *_ = env
+    page = client.get("/search", params={"q": "bicycle"}).text
+    assert "1 result in 1 clip" in page
+    assert "1 searched" in page

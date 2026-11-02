@@ -136,7 +136,7 @@ Process a clip (about $0.35 of segmentation per 20-second clip) and review it:
 
 ```bash
 python scripts/run_pipeline.py data/clips/my_clip.mp4
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000   # http://localhost:8000
+python scripts/review.py --work-dir data/work                 # http://localhost:8000 (review and search)
 python scripts/export_catalog.py data/clips/my_clip.mp4       # JSON and CSV in data/work
 ```
 
@@ -151,7 +151,7 @@ forms with a per-process token, and escapes everything it shows.
 
 - `app/pipeline/`: the stages (`transcribe.py`, `extract.py`, `verify.py`,
   `sam.py`), claims and evidence models, review store and catalog export.
-- `app/main.py`: the review app; `app/judge_app.py`: the blind judging sheet.
+- `app/main.py`: the review app, with a search across all processed clips (`app/search.py`); `app/judge_app.py`: the blind judging sheet.
 - `scripts/run_pipeline.py` and `scripts/run_batch.py`: run one clip or a group of
   clips, with spending caps (`--prompt basic` selects the old prompt).
 - `scripts/evaluate_clip.py`, `scripts/blind_eval.py`, `scripts/make_judge_sheet.py`,
