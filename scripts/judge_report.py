@@ -40,7 +40,8 @@ def describe(label: str, stats: GroupStats) -> str:
         f"{stats.not_exists} not visible, {stats.unsure} unsure); share visible "
         f"{pct(stats.share_existing)} of {stats.decided} decided{spread}; "
         f"counting every unsure as not visible: "
-        f"{pct(stats.share_counting_unsure_as_missing)}"
+        f"{pct(stats.share_counting_unsure_as_missing)}; "
+        f"of the visible ones, {stats.attribute_notes} had a wrong attribute"
     )
 
 
@@ -56,6 +57,11 @@ def main() -> None:
         sys.exit(1)
 
     print(f"items judged: {summary.items_judged} of {summary.items_total}")
+    if summary.attribute_notes_elsewhere:
+        print(
+            f"WARNING: {summary.attribute_notes_elsewhere} 'attr:' notes are on "
+            "judgments other than 'visible'; they are not counted"
+        )
     if summary.items_judged < summary.items_total:
         print("WARNING: not everything is judged yet, so these numbers are partial")
     for key, label in LABELS.items():

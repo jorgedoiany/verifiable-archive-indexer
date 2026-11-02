@@ -38,12 +38,21 @@ def wilson_interval(
     return max(0.0, centre - margin), min(1.0, centre + margin)
 
 
+ATTRIBUTE_PREFIX = "attr:"
+
+
+def is_attribute_note(note: str | None) -> bool:
+    """True if a judgment note starts with the attribute marker."""
+    return bool(note) and note.strip().casefold().startswith(ATTRIBUTE_PREFIX)
+
+
 @dataclass(frozen=True, slots=True)
 class GroupStats:
     judged: int = 0
     exists: int = 0
     not_exists: int = 0
     unsure: int = 0
+    attribute_notes: int = 0  # visible, but a detail such as the color was wrong
 
     @property
     def decided(self) -> int:
@@ -66,15 +75,17 @@ class JudgingSummary:
     items_total: int
     items_judged: int
     groups: dict[str, GroupStats]
+    attribute_notes_elsewhere: int = 0
 
 
-def _stats(verdicts: Iterable[Verdict]) -> GroupStats:
+def _stats(verdicts: Iterable[Verdict], attribute_notes: int = 0) -> GroupStats:
     counts = Counter(verdicts)
     return GroupStats(
         judged=sum(counts.values()),
         exists=counts[Verdict.EXISTS],
         not_exists=counts[Verdict.NOT_EXISTS],
         unsure=counts[Verdict.UNSURE],
+        attribute_notes=attribute_notes,
     )
 
 
@@ -84,6 +95,8 @@ def summarize_judgments(work_dir: Path) -> JudgingSummary:
     cache = {}
     verdicts = {name: [] for name in GROUP_NAMES}
     judged_items = 0
+    attribute_notes = dict.fromkeys(GROUP_NAMES, 0)
+    elsewhere = 0
     for item in sheet.items:
         judgment = store.judgments.get(item.item_id)
         if judgment is None:
@@ -97,12 +110,20 @@ def summarize_judgments(work_dir: Path) -> JudgingSummary:
             raise JudgingDataError(
                 f"claim {item.claim_id} is no longer in the run of {item.stem}"
             )
-        verdicts[_GROUP_OF_STATUS[claim.status]].append(judgment.verdict)
+        group_name = _GROUP_OF_STATUS[claim.status]
+        verdicts[group_name].append(judgment.verdict)
+        if is_attribute_note(judgment.note):
+            if judgment.verdict == Verdict.EXISTS:
+                attribute_notes[group_name] += 1
+            else:
+                elsewhere += 1
         judged_items += 1
     everything = [verdict for group in verdicts.values() for verdict in group]
-    groups = {"all": _stats(everything)}
-    groups.update({name: _stats(group) for name, group in verdicts.items()})
-    return JudgingSummary(len(sheet.items), judged_items, groups)
+    groups = {"all": _stats(everything, sum(attribute_notes.values()))}
+    groups.update(
+        {name: _stats(group, attribute_notes[name]) for name, group in verdicts.items()}
+    )
+    return JudgingSummary(len(sheet.items), judged_items, groups, elsewhere)
 
 
 def summary_to_dict(summary: JudgingSummary) -> dict:
@@ -114,6 +135,7 @@ def summary_to_dict(summary: JudgingSummary) -> dict:
             "exists": stats.exists,
             "not_exists": stats.not_exists,
             "unsure": stats.unsure,
+            "attribute_notes": stats.attribute_notes,
             "share_existing": stats.share_existing,
             "interval_95": None if interval is None else [interval[0], interval[1]],
             "share_counting_unsure_as_missing": stats.share_counting_unsure_as_missing,
@@ -121,5 +143,6 @@ def summary_to_dict(summary: JudgingSummary) -> dict:
     return {
         "items_total": summary.items_total,
         "items_judged": summary.items_judged,
+        "attribute_notes_elsewhere": summary.attribute_notes_elsewhere,
         "groups": groups,
     }

@@ -74,6 +74,15 @@ Transcribe, Muse Spark 1.3 and SAM 3.1.
   only the clip, the object and the range, in shuffled order.
 - Proportions are reported with the counts behind them and a 95% Wilson
   interval, and also with every "unsure" counted as not visible.
+- Attribute errors. Added on 2026-11-02, while the author was judging the first
+  blind run and before any judging report was run or any number seen. A claim
+  is judged "visible in the range" when the object it points to is visible
+  there, even if a detail such as its color is wrong; the author then starts
+  the note with "attr:" and says what it really is. The report counts these
+  notes separately, so claims with a wrong attribute are not presented as
+  fully correct. The rule appeared after the author had already judged some
+  items; the author was asked to re-check the earlier ones against it, and
+  which ones were re-checked is not recorded.
 
 ## Deviations
 

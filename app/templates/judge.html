@@ -18,7 +18,7 @@
   <p><a href="/">Progress</a> · item {{ view.position }} of {{ view.total }} · {{ judged }} judged</p>
   <h1>{{ view.value }}</h1>
   <p class="lead">Clip {{ view.stem }}{% if view.start_s is not none %} · cited range {{ '%.1f'|format(view.start_s) }} to {{ '%.1f'|format(view.end_s) }} s{% else %} · no time range cited, so judge the whole clip{% endif %}</p>
-  <p class="meta">Is this object clearly visible on screen at some moment inside that range? One second of margin is fine. If you cannot clearly see it there, answer "not visible", even if it appears somewhere else in the clip.</p>
+  <p class="meta">Is this object clearly visible on screen at some moment inside that range? One second of margin is fine. If you cannot clearly see it there, answer "not visible", even if it appears somewhere else in the clip. If it is the right object but a detail such as its color is wrong, answer "visible" and start the note with attr: and say what it really is.</p>
   <video id="player" controls preload="auto" src="/media/{{ view.stem }}"{% if view.start_s is not none %} data-start="{{ view.start_s }}" data-end="{{ view.end_s }}"{% endif %}></video>
   <p><button type="button" id="play-range">Play the cited range (R)</button></p>
   {% if view.verdict %}

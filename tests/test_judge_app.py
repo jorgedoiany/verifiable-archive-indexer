@@ -198,3 +198,10 @@ def test_security_headers_and_static_assets(env):
     assert headers["x-content-type-options"] == "nosniff"
     for name in ("style.css", "judge.css", "judge.js"):
         assert client.get(f"/static/{name}").status_code == 200
+
+
+def test_the_page_explains_the_attribute_note_rule(env):
+    client, _, work = env
+    item = load_sheet(work).items[0]
+    text = client.get(f"/judge/{item.item_id}").text
+    assert "start the note with attr:" in text
