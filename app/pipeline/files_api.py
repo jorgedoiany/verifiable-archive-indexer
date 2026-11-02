@@ -13,6 +13,7 @@ MAX_UPLOAD_BYTES = 1_073_741_824  # documented 1 GiB cap for Files API uploads
 MIN_EXPIRY_S = 3_600  # documented minimum for expires_after.seconds (1 hour)
 MAX_EXPIRY_S = 2_592_000  # documented maximum (30 days)
 RETRY_STATUSES = {429, 500}
+TIMEOUT = httpx.Timeout(600.0, connect=30.0)
 
 
 class FilesError(RuntimeError):
@@ -52,16 +53,25 @@ def upload_video(
         "expires_after[seconds]": str(expires_seconds),
     }
 
-    with httpx.Client(timeout=600.0) as client:
+    with httpx.Client(timeout=TIMEOUT) as client:
         response: httpx.Response | None = None
         for attempt in range(max_retries + 1):
-            with path.open("rb") as handle:
-                response = client.post(
-                    url,
-                    headers=headers,
-                    data=form,
-                    files={"file": (path.name, handle, "video/mp4")},
-                )
+            try:
+                with path.open("rb") as handle:
+                    response = client.post(
+                        url,
+                        headers=headers,
+                        data=form,
+                        files={"file": (path.name, handle, "video/mp4")},
+                    )
+            except httpx.TransportError as exc:  # timeouts and connection errors
+                if attempt < max_retries:
+                    sleep(2**attempt)
+                    continue
+                raise FilesError(
+                    f"network error after {attempt + 1} attempts: "
+                    f"{type(exc).__name__}"
+                ) from exc
             if response.status_code in RETRY_STATUSES and attempt < max_retries:
                 sleep(2**attempt)
                 continue
@@ -87,11 +97,16 @@ def delete_file(
     file_id: str, settings: Settings, *, ignore_missing: bool = True
 ) -> None:
     """Delete an uploaded file; a 404 counts as already deleted by default."""
-    response = httpx.delete(
-        f"{settings.api_base}/files/{file_id}",
-        headers={"Authorization": f"Bearer {settings.api_key}"},
-        timeout=60.0,
-    )
+    try:
+        response = httpx.delete(
+            f"{settings.api_base}/files/{file_id}",
+            headers={"Authorization": f"Bearer {settings.api_key}"},
+            timeout=60.0,
+        )
+    except httpx.TransportError as exc:
+        raise FilesError(
+            f"network error while deleting {file_id}: {type(exc).__name__}"
+        ) from exc
     if response.status_code == 404 and ignore_missing:
         return
     if not response.is_success:

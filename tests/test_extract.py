@@ -257,3 +257,20 @@ def test_prompt_variant_reaches_the_request(settings, respx_mock):
     ]
     assert "EVERY clearly visible" not in texts[0]
     assert "EVERY clearly visible" in texts[1]
+
+
+def test_a_timeout_is_retried_then_succeeds(settings, respx_mock):
+    route = respx_mock.post(URL).mock(
+        side_effect=[httpx.ReadTimeout("slow"), httpx.Response(200, json=reply("ok"))]
+    )
+    waits = []
+    assert call_model("file-1", "p", settings, sleep=waits.append) == "ok"
+    assert route.call_count == 2
+    assert waits == [1]
+
+
+def test_repeated_timeouts_become_an_extract_error(settings, respx_mock):
+    route = respx_mock.post(URL).mock(side_effect=httpx.ReadTimeout("slow"))
+    with pytest.raises(ExtractCallError, match="network error"):
+        call_model("file-1", "p", settings, max_retries=1, sleep=lambda s: None)
+    assert route.call_count == 2

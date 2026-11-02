@@ -99,6 +99,15 @@ Transcribe, Muse Spark 1.3 and SAM 3.1.
   clip, so the cost reported is the SAM frames and their price. The
   transcription and extraction calls are small by comparison and are not
   itemized.
+- 2026-11-02, after the blind run with the inventory prompt but before any of its
+  results was looked at: 5 of the 9 blind clips completed and 4 failed with
+  network read timeouts, in three different stages (transcription for one clip,
+  the visual model call for two, segmentation for one). The error handling was
+  fixed (network errors are now retried and reported per stage, with longer
+  timeouts) and the 4 clips are run again. The partial files of the failed
+  attempts are overwritten without having been looked at, and the clips that
+  completed are not rerun. The reported cost covers completed runs; failed
+  attempts may also have been billed and are not included.
 
 ## Observations before the blind run
 
