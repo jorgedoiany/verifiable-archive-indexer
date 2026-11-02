@@ -132,11 +132,12 @@ def test_prompt_asks_for_an_exhaustive_inventory():
     assert "one claim per appearance" in prompt
 
 
-def test_basic_prompt_is_the_default_and_has_no_inventory_request():
+def test_inventory_prompt_is_the_default_and_basic_has_no_inventory_request():
     default = build_extraction_prompt(TRANSCRIPT)
-    assert default == build_extraction_prompt(TRANSCRIPT, "basic")
-    assert "EVERY clearly visible" not in default
+    assert default == build_extraction_prompt(TRANSCRIPT, "inventory")
+    assert "EVERY clearly visible" in default
     assert "English noun phrase" in default
+    assert "EVERY clearly visible" not in build_extraction_prompt(TRANSCRIPT, "basic")
 
 
 def test_inventory_prompt_adds_only_the_inventory_block():

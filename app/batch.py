@@ -175,3 +175,8 @@ def run_batch(
             report_path, prompt_variant, fps, max_total_cost, previous, persisted
         )
     return entries
+
+
+def pending_stems(stems: Sequence[str], work_dir: Path) -> list[str]:
+    """Clips that have no result yet in the work folder."""
+    return [s for s in stems if not (Path(work_dir) / f"{s}.result.json").exists()]

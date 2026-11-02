@@ -22,6 +22,7 @@ from app.batch import (
     GROUPS,
     BatchReportError,
     check_blind_frozen,
+    pending_stems,
     run_batch,
     select_stems,
 )
@@ -72,9 +73,12 @@ def main() -> None:
         sys.exit(1)
 
     if args.dry_run:
-        done = [s for s in stems if (args.work_dir / f"{s}.result.json").exists()]
-        print(f"would run {len(stems) - len(done)} of {len(stems)} clips: " + ", ".join(stems))
-        print(f"already have a result: {len(done)}")
+        todo = pending_stems(stems, args.work_dir)
+        print(
+            f"would run {len(todo)} of {len(stems)} clips: "
+            + (", ".join(todo) or "none")
+        )
+        print(f"already have a result: {len(stems) - len(todo)}")
         print(
             f"prompt: {args.prompt}; caps: ${args.max_cost_per_clip:.2f} per clip, "
             f"${args.max_total_cost:.2f} total"

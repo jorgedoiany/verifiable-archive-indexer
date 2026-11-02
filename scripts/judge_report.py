@@ -66,6 +66,18 @@ def main() -> None:
         print("WARNING: not everything is judged yet, so these numbers are partial")
     for key, label in LABELS.items():
         print(describe(label, summary.groups[key]))
+    for key, label in LABELS.items():
+        stats = summary.groups[key]
+        strict = stats.strict_interval()
+        print(
+            f"{label}, strict (wrong attribute counted as an error): "
+            f"{pct(stats.strict_share_existing)} of {stats.decided} decided"
+            + (
+                ""
+                if strict is None
+                else f", 95% interval {pct(strict[0])} to {pct(strict[1])}"
+            )
+        )
     out = judging_dir(args.work_dir) / "report.json"
     out.write_text(json.dumps(summary_to_dict(summary), indent=2), encoding="utf-8")
     print(f"report: {out}")

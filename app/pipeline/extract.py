@@ -136,7 +136,7 @@ def extract_claims(
     file_id: str, transcript: Transcript, settings: Settings, **call_kwargs
 ) -> tuple[ClaimSet, list[str]]:
     """Call the model, parse its claims, and apply the checks that need no model."""
-    variant = call_kwargs.pop("prompt_variant", "basic")
+    variant = call_kwargs.pop("prompt_variant", "inventory")
     prompt = build_extraction_prompt(transcript, variant)
     budget = call_kwargs.pop("max_output_tokens", DEFAULT_MAX_OUTPUT_TOKENS)
     try:
@@ -165,7 +165,7 @@ def run_extract_stage(
     settings: Settings,
     *,
     expires_seconds: int = 86_400,
-    prompt_variant: str = "basic",
+    prompt_variant: str = "inventory",
 ) -> tuple[ClaimSet, list[str], str, Path]:
     """Upload the audio-free video, extract claims, write <stem>.claims.json.
 
