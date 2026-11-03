@@ -32,3 +32,8 @@ def test_the_images_are_small_enough_and_the_diagram_is_still_there():
     assert images, "the README should have screenshots"
     assert [p.name for p in images if p.stat().st_size > 3_000_000] == []
     assert "flowchart" in README
+
+
+def test_the_generated_module_map_is_credited():
+    assert "docs/images/module-map.png" in README
+    assert "GitDiagram" in README
