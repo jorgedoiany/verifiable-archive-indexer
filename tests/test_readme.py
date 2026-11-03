@@ -37,3 +37,9 @@ def test_the_images_are_small_enough_and_the_diagram_is_still_there():
 def test_the_generated_module_map_is_credited():
     assert "docs/images/module-map.png" in README
     assert "GitDiagram" in README
+
+
+def test_both_diagrams_are_text_diagrams_and_the_module_map_image_is_only_linked():
+    assert README.count("flowchart") == 2
+    assert "![Module map" not in README
+    assert "(docs/images/module-map.png)" in README
