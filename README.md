@@ -9,6 +9,24 @@ travels without a quote from the transcript or a time range in the video, that
 independent checks run on it, that what the checks cannot confirm waits for a
 human, and that the system reports how well it did, including what did not work.
 
+## Screenshots
+
+![The list of processed clips, with the claims waiting for review](docs/images/list.png)
+
+*The clip list: claims per clip, how many wait for review, and how many the automatic checks agree on.*
+
+![A clip page with the video, the counters and the claims with their evidence](docs/images/review.png)
+
+*A clip page: the video, the counters, and every claim with its state and its evidence. "Play from here" jumps to that second.*
+
+![A claim the automatic check could not confirm, waiting for the archivist](docs/images/miss.png)
+
+*A claim the automatic check could not confirm: no segmentation match was found for a magnet that is really on the fridge. A miss never discards a claim; it waits here for the archivist.*
+
+![Search results for a word, with a button to play from that second](docs/images/search.png)
+
+*Search across the archive: type a word, see where it appears, and play the video from that second.*
+
 ## What it does
 
 1. **Transcribe.** Speech is transcribed turn by turn, with timestamps.
@@ -36,6 +54,95 @@ human, and that the system reports how well it did, including what did not work.
 
 "Checks agree" means independent automatic checks agree with the model. It does
 not mean the claim is correct. The interface and the catalog say so.
+
+## How it fits together
+
+Data flow, with the Meta model used at each step:
+
+```mermaid
+flowchart LR
+    clip(["Clip (mp4)"])
+    subgraph prep["1. Prepare (ffmpeg)"]
+        audio["Speech audio"]
+        silent["Video without audio"]
+    end
+    subgraph understand["2. Understand"]
+        asr["Muse Voice Transcribe<br/>timed transcript"]
+        spark["Muse Spark 1.3<br/>claims with a quote or a time range"]
+    end
+    subgraph check["3. Check"]
+        quote["Quote found in the cited turn<br/>(speech evidence)"]
+        sam["SAM 3.1<br/>object in the cited range (objects only)"]
+    end
+    subgraph loop["4. Human in the loop"]
+        review["Archivist<br/>accept, edit or reject"]
+        out["Catalog (JSON, CSV)<br/>and search"]
+    end
+    clip --> audio --> asr --> spark
+    clip --> silent --> spark
+    spark --> quote --> review
+    spark --> sam --> review
+    review --> out
+    classDef meta fill:#dbeafe,stroke:#2563eb,color:#0f172a
+    classDef people fill:#fef3c7,stroke:#d97706,color:#0f172a
+    class asr,spark,sam meta
+    class review,out people
+```
+
+Modules and the files they live in:
+
+```mermaid
+flowchart TD
+    subgraph pipeline["Indexing pipeline (app/pipeline)"]
+        run["run.py<br/>runs the three stages in order"]
+        tstage["transcript_stage.py, media.py<br/>ffmpeg audio, transcription stage"]
+        tr["transcribe.py<br/>Muse Voice Transcribe client"]
+        estage["extract.py, extract_parse.py<br/>prompt, claims, quote check"]
+        up["files_api.py<br/>video upload"]
+        vstage["verify_stage.py, verify.py<br/>statuses from the SAM results"]
+        sam["sam.py, sam_parse.py<br/>SAM 3.1 client and parser"]
+        run --> tstage --> tr
+        run --> estage --> up
+        run --> vstage --> sam
+    end
+    meta(["Meta Model API"])
+    tr -.-> meta
+    estage -.-> meta
+    sam -.-> meta
+    data[("Run files: transcript, claims, results<br/>claims.py, models.py, run_data.py")]
+    run -->|"writes"| data
+    subgraph archivist["Archivist workflow (app)"]
+        main["main.py, views.py<br/>local review app"]
+        review["review.py<br/>decisions, stored apart"]
+        catalog["catalog.py<br/>JSON and CSV export"]
+        search["search.py<br/>search and Play from here"]
+        main --> review
+        main --> catalog
+        main --> search
+    end
+    data -->|"read by"| main
+    subgraph evaluation["Evaluation (app)"]
+        labels["labels.py, eval_set.py, freeze.py<br/>labels, split, frozen blind set"]
+        batch["batch.py<br/>runs a group of clips with spending caps"]
+        judging["judging.py, judge_app.py, judge_report.py<br/>blind human judgment"]
+        metrics["evaluate.py, blind_eval.py<br/>metrics against the labels"]
+        labels --> batch
+        labels -->|"frozen labels"| metrics
+        judging --> metrics
+    end
+    batch -->|"calls"| run
+    data --> judging
+    classDef metamodel fill:#dbeafe,stroke:#2563eb,color:#0f172a
+    classDef humans fill:#fef3c7,stroke:#d97706,color:#0f172a
+    classDef store fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef evals fill:#dcfce7,stroke:#059669,color:#0f172a
+    class meta,tr,estage,sam metamodel
+    class main,review,catalog,search humans
+    class data store
+    class labels,batch,judging,metrics evals
+```
+
+A more detailed map, generated automatically from the repository by [GitDiagram](https://gitdiagram.com/jorgedoiany/verifiable-archive-indexer), is in [`docs/images/module-map.png`](docs/images/module-map.png) (open it at full size).
 
 ## Meta models used
 
@@ -170,9 +277,8 @@ forms with a per-process token, and escapes everything it shows.
 - No data from any employer or third party is used. The clips, the labels, the
   transcripts and the results of the author's personal videos are not in this
   repository; only aggregate numbers are published.
-- Built with the help of Claude (Anthropic) as a coding mentor and pair
-  programmer. The author ran and reviewed every change, recorded the clips, wrote
-  the labels and did the judging.
+- Built using Claude (Anthropic) as a coding agent. The author directed the work,
+  recorded the clips, wrote the labels and did the judging.
 
 ## License
 
