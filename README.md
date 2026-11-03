@@ -170,9 +170,8 @@ forms with a per-process token, and escapes everything it shows.
 - No data from any employer or third party is used. The clips, the labels, the
   transcripts and the results of the author's personal videos are not in this
   repository; only aggregate numbers are published.
-- Built with the help of Claude (Anthropic) as a coding mentor and pair
-  programmer. The author ran and reviewed every change, recorded the clips, wrote
-  the labels and did the judging.
+- Built using Claude (Anthropic) as a coding agent. The author directed the work,
+  recorded the clips, wrote the labels and did the judging.
 
 ## License
 
