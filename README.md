@@ -9,6 +9,24 @@ travels without a quote from the transcript or a time range in the video, that
 independent checks run on it, that what the checks cannot confirm waits for a
 human, and that the system reports how well it did, including what did not work.
 
+## Screenshots
+
+![The list of processed clips, with the claims waiting for review](docs/images/list.png)
+
+*The clip list: claims per clip, how many wait for review, and how many the automatic checks agree on.*
+
+![A clip page with the video, the counters and the claims with their evidence](docs/images/review.png)
+
+*A clip page: the video, the counters, and every claim with its state and its evidence. "Play from here" jumps to that second.*
+
+![A claim the automatic check could not confirm, waiting for the archivist](docs/images/miss.png)
+
+*A claim the automatic check could not confirm: no segmentation match was found for a magnet that is really on the fridge. A miss never discards a claim; it waits here for the archivist.*
+
+![Search results for a word, with a button to play from that second](docs/images/search.png)
+
+*Search across the archive: type a word, see where it appears, and play the video from that second.*
+
 ## What it does
 
 1. **Transcribe.** Speech is transcribed turn by turn, with timestamps.
@@ -36,6 +54,27 @@ human, and that the system reports how well it did, including what did not work.
 
 "Checks agree" means independent automatic checks agree with the model. It does
 not mean the claim is correct. The interface and the catalog say so.
+
+## How it fits together
+
+```mermaid
+flowchart TD
+    clip["Clip (mp4)"] --> ffmpeg["ffmpeg: split audio and video"]
+    ffmpeg --> audio["Speech audio"]
+    ffmpeg --> silent["Video without audio"]
+    audio --> asr["Muse Voice Transcribe"]
+    asr --> transcript["Timed transcript"]
+    silent --> spark["Muse Spark 1.3"]
+    transcript --> spark
+    spark --> claims["Claims, each with a quote or a time range"]
+    claims --> quote["Quote check against the transcript"]
+    claims --> sam["SAM 3.1: does the object appear in the cited range?"]
+    quote --> checked["Claims with their automatic status"]
+    sam --> checked
+    checked --> review["Archivist review: accept, edit or reject"]
+    review --> catalog["Catalog (JSON and CSV)"]
+    review --> search["Search, with Play from here"]
+```
 
 ## Meta models used
 
