@@ -331,3 +331,10 @@ def test_the_search_heading_counts_the_clips_with_matches(env):
     page = client.get("/search", params={"q": "bicycle"}).text
     assert "1 result in 1 clip" in page
     assert "1 searched" in page
+
+
+def test_the_stylesheet_keeps_hidden_elements_hidden(env):
+    client, *_ = env
+    css = client.get("/static/style.css").text
+    assert "[hidden]" in css
+    assert "display: none !important" in css
