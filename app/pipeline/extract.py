@@ -1,7 +1,7 @@
 """Stage 2: ask the vision model for claims with evidence, then check them offline.
 
-The response shape (status, output[].content[].text) follows the usual
-Responses API layout and has not been confirmed against a live call yet.
+The response shape (status, output[].content[].text) follows the Responses API
+layout and has been exercised against live calls in the pipeline and blind runs.
 """
 from __future__ import annotations
 
