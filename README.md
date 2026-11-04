@@ -9,6 +9,10 @@ travels without a quote from the transcript or a time range in the video, that
 independent checks run on it, that what the checks cannot confirm waits for a
 human, and that the system reports how well it did, including what did not work.
 
+## Demo video
+
+[Watch the demo (2:21) on YouTube](https://www.youtube.com/watch?v=y62l2ED6P28)
+
 ## Screenshots
 
 ![The list of processed clips, with the claims waiting for review](docs/images/list.png)
